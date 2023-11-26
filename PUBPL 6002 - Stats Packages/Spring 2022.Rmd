@@ -1,0 +1,399 @@
+---
+output: 
+  stevetemplates::syllabus:
+    latex_engine: xelatex
+    dev: cairo_pdf
+geometry: margin=1in
+
+title: "PUBL 6002: Statistical Packages for Public Policy"
+author: Ian T. Adams
+date: "Spring 2022"
+
+email: "ian.adams@utah.edu"
+web: "ianadamsresearch.com"
+officehours: "\\shrug"
+office: "\\shrug"
+classroom: "online"
+classhours: "asynchronous"
+
+fontfamily: mathpazo
+fontsize: 11pt
+header-includes:
+   - \linespread{1.05}
+---
+ <!-- CCCCCCCCnncdxxxxxxx -->
+<!-- Fun fact: my cat added this comment as she walked over the keyboard while I was working on this template. -->
+<!-- I'm going to keep it going forward. Long live Queen Bea. -->
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(cache=FALSE, dev='pdf')
+knitr::opts_chunk$set(cache=F,
+                      fig.path = 'figs/',
+                      cache.path='cache/',
+                      warning=F,
+                      message=F)
+
+knitr::opts_chunk$set(
+                  fig.process = function(x) {
+                      x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
+                      if (file.rename(x, x2)) x2 else x
+                      }
+                  )
+
+## Function for a Mon-Fri readout
+# advdate <- function(obj, adv) {
+#  tmon <- obj + 7*(adv-1)
+#  tfri <- obj + 4 + 7*(adv-1)
+#  tmon <- format(tmon, format="%m/%d")
+#  tfri <- format(tfri, format="%m/%d")
+#  zadv <- sprintf("%02d", adv)
+#  tmp <- paste("Week ",zadv,sep='',", ", tmon," - ",tfri)
+#  return(tmp)
+# }
+
+## Function for a Mon-Sun readout
+advdate <- function(obj, adv) {
+ tmon <- obj + 7*(adv-1)
+ tsun <- obj + 6 + 7*(adv-1)
+ tmon <- format(tmon, format="%m/%d")
+ tsun <- format(tsun, format="%m/%d")
+ zadv <- sprintf("%02d", adv)
+ tmp <- paste("Week ",zadv,sep='',", ", tmon," - ",tsun)
+ return(tmp)
+}
+
+options(scipen=999)
+library(tidyverse)
+library(stevemisc)
+#library(ggpmisc)
+#library(anonymizer)
+# library(ggcal)
+#library(stringr)
+#library(kfigr)
+#library(broom)
+library(lubridate)
+library(here)
+library(kableExtra)
+
+## for grading scheme
+
+grades <- read_csv(here("grading-scheme.csv"))
+
+# library(RefManageR)
+# library(knitcitations)
+# library(rcrossref)
+#bib <- ReadBib("~/Dropbox/master.bib")
+#myopts <- BibOptions(bib.style = "authoryear", style="latex", first.inits=FALSE, max.names = 20)
+
+# Create a calendar for your syllabus ----
+# Source: http://svmiller.com/blog/2020/08/a-ggplot-calendar-for-your-semester/
+
+# 1) what is the first Monday of the semester?
+# Any number of ways to identify dates in R, but we'll use {lubridate} and the ymd() function here.
+# Format: YYYYMMDD. In this example, 4 January 2021.
+
+mon <- ymd(20220110)
+
+# What are some dates you won't be here? In this example, I had a conference on 7 January 2021.
+# Spring Break was 15 March 2021 to 19 March 2021.
+not_here_dates <- c(
+  # Thanksgiving week,
+  #seq(ymd(20211122),ymd(20211128), by=1),
+  # Martin Luther King Jr. Holiday
+  #ymd(20220117),
+  # President's Day
+  #ymd(20220221),
+  # Spring Break
+  seq(ymd(20220306),ymd(20220313), by=1))
+
+# You can adjust this as you see fit. Basically: add assignment types (e.g. papers, quizzes).
+# My intro class was fairly simple: just exams.
+exam_dates <- c(ymd(20220213), ymd(20220227))#ymd(20220218), ymd(20220401), ymd(20220429))
+project_dates <- c(ymd(20220220), ymd(20220424))
+
+# What are the full dates of the semester? Here, I'll exclude exam week as I like to do.
+# In this case: 6 January to 23 April
+semester_dates <- seq(ymd(20220110), ymd(20220426), by=1)
+
+# Custom function for treating the first day of the month as the first week 
+# of the month up until the first Sunday (unless Sunday was the start of the month)
+wom <- function(date) {
+    first <- wday(as.Date(paste(year(date),month(date),1,sep="-")))
+    return((mday(date)+(first-2)) %/% 7+1)
+  }
+
+# Create a data frame of dates, assign to Cal
+tibble(date = seq(ymd(20220101), ymd(20220430), by=1))  %>%
+  mutate(mon = lubridate::month(date, label=T, abbr=F), # get month label
+         wkdy = weekdays(date, abbreviate=T), # get weekday label
+         wkdy = fct_relevel(wkdy, "Sun", "Mon", "Tue", "Wed", "Thu","Fri","Sat"), # make sure Sunday comes first
+         semester = ifelse(date %in% semester_dates, 1, 0), # is date part of the semester?
+         exams = ifelse(date %in% exam_dates, 1, 0), # is it an exam?
+         projects = ifelse(date %in% project_dates, 1, 0), # is it a project?
+         not_here = ifelse(date %in% not_here_dates, 1, 0), # is it a day off?
+         day = lubridate::mday(date), # get day of month to add later as a label
+         # Below: our custom wom() function
+         week = wom(date)) -> Cal
+
+# Create a category variable, for filling.
+# I can probably make this a case_when(), but this will work.
+
+Cal %>%
+  mutate(category = NA,
+         category = ifelse(semester == 1, "Semester", category),
+         category = ifelse(semester == 1 & wkdy %in% c("Mon"), "Start of Module", category),
+         category = ifelse(exams == 1, "Exams", category),
+         category = ifelse(projects == 1, "Projects", category),
+         category = ifelse(is.na(category) | (semester == 1 & not_here == 1), "NA", category)) -> Cal 
+
+Cal %>% 
+  ggplot(.,aes(wkdy, week)) +
+  # custom theme stuff below
+  # theme_steve_web() + 
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank()) +
+  # geom_tile and facet_wrap will do all the heavy lifting
+  geom_tile(alpha=0.8, aes(fill=category), color="black", size=.45) +
+  facet_wrap(~mon, scales="free", ncol=3) +
+  # fill in tiles to make it look more "calendary" (sic)
+  geom_text(aes(label=day),family="Open Sans") +
+  # put your y-axis down, flip it, and reverse it
+  scale_y_reverse(breaks=NULL) +
+  # manually fill scale colors to something you like...
+  scale_fill_manual(values=c("Start of Module"="steelblue", 
+                             "Semester"="lightsteelblue",
+                             "NA" = "white", # I like these whited out...
+                             "Exams"="indianred4",
+                             "Projects"="green"),
+                    #... but also suppress a label for a non-class semester day
+                    breaks=c("Start of Module","Exams","Projects")) +
+  labs(fill = "", x="", y="",
+       caption = "Notable dates: MLK Day (17 January), Presidents Day (21 February), Spring Break (6-13 March)")  -> class_cal
+
+```
+
+# Course Description
+
+> "One of the beautiful things about science is that it allows us to bumble along, getting it wrong time after time, and feel perfectly fine as long as we learn something each time."
+
+> Martin A. Schwartz (2008), ["The Importance of Stupidity in Scientific Research"](https://ir.stonybrook.edu/xmlui/bitstream/handle/11401/8083/schwartzimportanceofstupidityinscience.pdf?sequence=1)
+
+Data is the lifeblood of public policy research. As the spending of public dollars increases, legislators need accurate, timely, and easily-accessible data to make informed decisions. To fulfill this responsibility, researchers have developed a variety of tools and data analysis methods. Every researcher relies on a range of these tools and methods to translate their study into policy and public policy recommendations.
+
+However, data manipulation is a key concern. As data are generated, studies are run, and results are produced. But at first only the raw data are available. The transformation that turns the raw data into a meaningful result is what computational science studies, or more commonly referred to as *data science*. In this class, we will take some of the first steps that every data scientist does - by exploring and becoming comfortable with statistical packages. We will begin with Excel, but quickly move onto a commerical statistical package (SPSS), and then spend most of the semester using R, through its graphical interface RStudio, and the most popular data wrangling package, commonly referred to as the `tidyverse`. In fact, I used Rstudio and `tidyverse` to generate this syllabus!
+
+This course is designed to train graduate students to examine policy issues and address policy research questions using three statistical software packages commonly used in the public and nonprofit sector; Excel, SPSS and R. The course is divided into two equal parts. The first part prepares students to use Excel and SPSS to examine, clean, label and merge data to answer pertinent public policy questions. The second half of the course introduces students to a workflow methodology for quantitative projects and teaches students how to use the R statistical programming language to explore and manage data, to model a quantitative project, and to communicate through visualization in R.
+
+In the end, the goal is for you to be able to locate data, explore it, model it, and communicate your findings in a manner that helps you bring the power of evidence to policy making.
+
+\newpage
+
+# Course Objectives
+
+![The `tidyverse` workflow](data-science-workflow.png)
+
+By the end of this course, students will be able to:
+
+1. Search for and retrieve useable public policy datasets for their own exploration and statistical modeling.
+
+2. Import, modify, transform, and visualize data within various statistical packages, with a particular focus on SPSS and R.
+
+3. Attain data literacy and accurately communicate statistical findings in an accessible manner.
+
+4. Confidently explore empirical public policy questions of your own.
+
+## Teaching and Learning Methods
+
+Traditional statistical courses begin with theory-heavy instruction and abstract concepts. Sometimes those classes never even touch real data! This class takes a different approach. We will start with the data that interests us, and learn how to clean it, interrogate it, model it, and visualize it. In other words, you won't find a bunch of statistical formulas in this class!
+
+Each week is a "module" that focuses on a specific lesson. In the first six weeks, those lessons are primarily in SPSS, a commercial piece of statistical software. SPSS is menu-driven - meaning you "drive" it like the programs you probably already use every day. In the rest of the course, we accelerate things and start learning R - specifically, the "tidyverse" package, which is what data scientists all over the world use every day. But don't worry, we are going to progress at a manageable speed.
+
+Importantly, I am here to help. Learning R is unique, in that the learning never really stops. I have to look up something about R almost every day of my life. So, when you get stuck, don't stay stuck. Reach out, we'll Zoom, and we'll get it fixed.
+
+### Office Hours
+
+What are [office hours in an online class](https://vimeo.com/270014784)? I take a very liberal view of the word "office" and "hours." Most days, I'm literally sitting at a computer at home (or in a coffee shop on better days), webcam at the ready, and am happy to jump into a quick conversation with any student, at any time. Email me! You can either use the built-in Canvas messaging system, or email directly at ian.adams@utah.edu.
+
+# Required Readings & Materials
+
+The primary text for the R sections of the course (the second half of the semester) is the free online book [R for Data Science](https://r4ds.had.co.nz/). This is a free resource, but if you are interested in a hard copy, you can find inexpensive options online. 
+
+You will also need access to SPSS. Unless you have your own license, you will need to use the University license, by logging into the CSBS Virtual Lab. If you haven't done that before, you can find instructions here: https://support.csbs.utah.edu/csbs-virtual-lab.php.
+
+If you have logged into the CSBS Virtual Lab before, you can log-in here: https://apps.csbs.utah.edu/.
+
+The second half of the course will be teaching R, using the RStudio environment. These are completely free tools (one of the major reasons to use R!), and you will need to install both. You can find instructions online, or I've [put together a little walkthrough](https://ianadamsresearch.com/courses/pubpl-6002/intro-and-setup-materials/). This doesn't need to be done right away, but if you want to get started early, feel free!
+
+# Canvas 
+
+As this an online course, the course Canvas site is a virtual classroom and super syllabus all-in-one. There are several aids for addressing any technical difficulties experienced in Canvas, listed below. These are also linked to from the course Canvas site’s Help page. Please consult these aids before contacting instructors about technical difficulties.
+
+- University of Utah [Canvas Orientation resources](https://utahtacc.zendesk.com/hc/en-us/articles/205654094)
+- Online [Canvas Guides](https://community.canvaslms.com/community/answers/guides/)
+- University of Utah IT Help Desk: 801-581-4000
+
+# Weekly Schedule
+
+This course is arranged into 'modules' for each week. Please see the Canvas course for details on each week.
+
+```{r calendar, echo=F, eval=T, fig.cap="PUBPL 6002, Stats Packages for Public Policy, Spring 2022",  warning=F, fig.width=11, fig.height=7}
+
+class_cal
+
+```
+
+## `r advdate(mon, 1)`: Types and Sources of Public Policy Data
+
+Read *all* associated documents on course website. Here are some additional resources I think students can benefit from in this course and throughout their academic and professional careers.
+  
+  - [Taking Good Notes](http://svmiller.com/blog/2014/09/taking-good-notes/)
+  - [Dos and Dont's of Writing for Students](http://svmiller.com/blog/2015/06/dos-and-donts-of-writing-for-students/)
+  - [Assorted Tips for Students on Writing Research Papers](http://svmiller.com/blog/2015/12/assorted-tips-students-research-papers/)
+
+
+## `r advdate(mon, 2)`: Excel to Warm Us Up
+
+##  `r advdate(mon, 3)`: Intro to SPSS
+
+##  `r advdate(mon, 4)`: Using SPSS for Data Analysis
+
+
+##  `r advdate(mon, 5)`: SPSS Advanced Operations
+
+##  `r advdate(mon, 6)`: Application of SPSS
+
+##  `r advdate(mon, 7)`: Intro to R and the `tidyverse` for data science
+
+##  `r advdate(mon, 8)`: The Data Science Workflow in R
+
+##  `r advdate(mon, 9)`: Fall Break - no assignments
+
+##  `r advdate(mon, 10)`: Data Acquisition and Transformation
+
+##  `r advdate(mon, 11)`: Exploratory Data Analysis
+
+## `r advdate(mon, 12)`: Basic Statistical Modeling
+
+##  `r advdate(mon, 13)`: Communicating with `ggplot2`
+
+##  `r advdate(mon, 14)`: Communicating with `rmarkdown`
+
+##  `r advdate(mon, 15)`: Writing Data Science Reports
+
+##  `r advdate(mon, 16)`: Finals
+
+
+
+# Course Policies
+
+I will detail the policy for this course below. Academic honesty is expected, and dishonesty will not be tolerated. The University policy on academic dishonesty can be found on the university website. An act of academic dishonesty will result in a course grade of E and a recommendation of additional disciplinary action. The faculty has adopted the following guidelines concerning what constitutes a violation of ethical standards for work completed in this course. Any of these violations will be considered academic dishonesty and treated as such. These guidelines are in addition to any University-wide guidelines concerning academic dishonesty, which may be in effect. All course assignments will be scanned through Turnitin, and any misconduct will result in a failing grade for the course. 
+
+1.	__Cheating__: the giving or receiving of any unauthorized assistance on any academic work;
+2.	__Plagiarism__: presenting the language, structures or ideas of another person or persons as one’s own academic work;
+3.	__Falsification__: Any untrue statement, either oral or written, concerning one’s own academic work or the academic work of another student, or the unauthorized alteration of any academic record; and
+4.	__Original work__: Unless specifically allowed by the instructor, all academic work undertaken in a course must be original (i.e., it must not have been submitted in a prior course or be submitted in a course being taken concurrently).
+
+## Course Work
+
+### Assignments
+
+Assignments vary by week/module. The exercises are fairly easy in the first SPSS modules, and ramp up in difficulty as we get into the R weeks. Check each module as we go, there are assignments every week. Late assignments will have 10% of their points deducted for each day late. I am easy to work with, however, so if you have non-school interference, just let me know ahead of time and we can figure it out.
+
+### Projects
+
+There are two projects in this class, one in SPSS, and one in R. If you would like, you can use the exact same dataset for both! These projects are straightforward - they ask you to locate public policy data, and generate some findings out of that dataset. The intent is that you are able to see the various ways both statistical packages allow us to communicate about data with others - I think you'll be surprised at just how sophisticated your analysis can be with just a little bit of effort!
+
+## Grading Policy
+
+
+
+This class has *approximately* 227 points available through quizzes, assignments, and projects:
+
+- Two quizzes - 6 points each, 12 points total 
+- Weekly Assignments (thirteen total) are worth up to 10 points each (130 points total).
+- Final SPSS project is worth 35 points.
+- Final R project is worth 50 points.
+
+That means: 
+
+- About **5%** of your grade will be determined by short quizzes.
+- About **57%** of your grade will be determined weekly assignments.
+- About **15%** of your grade will be determined by your SPSS project.
+- About **22%** of your grade will be determined by a final R project.
+
+Please keep in mind that these are approximations, and throughout the course I may modify the course and assignements as needed. I will communicate any such changes through the Canvas course announcements.
+
+### Grading Scheme 
+
+The course grading scheme is as follows. When a course grade falls between integers, I apply a standard rounding procedure: any point total that ends in .0 to .49 will be rounded down to the nearest whole number, while any point total that ends in .50 to .99 will be rounded up. Note that this is done automatically by Canvas. I do not grade on a curve, and would be delighted to be able to give every student an A. However, it is up to you to be consistent, motivated, and engaged. 
+
+```{r remedy003, echo=FALSE}
+
+kbl(grades, "latex")
+
+```
+
+## Attendance Policy
+
+As this is an asynchronous, online class, there is no attendance policy *per se*. However, you must complete all assignments, tests, and discussions as assigned (see late policy below). You should plan on logging in at least a few times per week in order to successfully complete the course.
+
+## Late Policy
+
+Please keep up with the class schedule, especially with assignment due dates. Late assignments and projects will be subject to a 10% decrease in points for every day they are late. Contact me beforehand if you are experiencing difficulties that will impact your ability to turn in work.
+
+## Instructor Expectations
+
+I commit to being your mentor and facilitator of the classroom experience, and to the following expectations for this course:
+
+- I will design the course to include lectures, readings materials, and assignments that will challenge students and will provide them with opportunities to learn and practice course content.
+- Though this online course includes pre-recorded lectures, it is not a class that is run “automatically” by technology. I interact with the class via announcements, virtual office hours, emails/the Canvas Inbox, feedback on assignments, and comments on lecture bulletin boards, among other methods.
+- I will respond to emails in a timely fashion. “Timely” in this instance means within 48 hours, not including weekends and holidays. *Normally*, I am quite a bit faster, but like everyone else, life sometimes intervenes.
+- I will be available for individual consultation via virtual office hours, email, or phone. Students will not be required to come to campus in order to meet with me, nor does it have to be during 'bankers hours.'
+- I will provide feedback on the assignments in a timely manner.
+- I will follow all [official University of Utah policies](https://registrar.utah.edu/handbook/) regarding conduct in the classroom, incompletes, and accommodations. Accommodations will be considered on an individual basis and only with required documentation. See the **University Policies** section at the end of this syllabus for more information and resources.
+
+## Student Expectations
+
+Though the online format allows students greater flexibility to complete their work, this course does have a structure and timeline, including due dates for course assignments. As such, the following is expected of all students in this class:
+
+- Students will log in to the course a minimum of 3 times per week.
+- Students may be expected to work with classmates; however, students are not expected to interact with their classmates in person. A good alternative to meeting in person would be online video conferencing, which allows students to find a time to meet that works best for their schedule. Depending on the assignment, students can also choose to interact with their classmates with whatever technology they are most comfortable with (Groupme, FaceTime, Google Hangouts, etc).
+- To do well in online courses, students must be self-motivated, organized, and willing to stay on top of their schedule. Students should take control of their learning while in this course.
+- Students will regularly check course announcements. The Announcements area is the instructor’s official means of communication when distributing information to the entire class.
+- Students will [update their Canvas settings](https://support.tlt.utah.edu/hc/en-us) to ensure they receive timely notifications from the course.
+- If students have any questions, are struggling with course materials, or need further assistance from their instructor, they will take the initiative to contact their instructor via the Inbox feature in Canvas or via email.
+Email is not perfect; sometimes, messages sent to instructors are lost before they are read. If you do not hear back from your instructor 3 days after sending a message, please contact your instructor again.
+- Students will engage with the course, students, and the instructor in a respectful and professional manner at all times.
+
+
+# University Policies
+
+It is my intent that students from all diverse backgrounds and perspectives be well served by this course, that students’ learning needs be addressed both in and out of class, and that the diversity that students bring to this class be viewed as a resource, strength, and benefit. It is my intent to present materials and activities that are respectful of diversity: gender, sexuality, disability, age, socioeconomic status, ethnicity, race, and culture. Your suggestions are encouraged and appreciated. Please let me know ways to improve the effectiveness of the course for you personally or for other students or student groups. In addition, if any of our class meetings conflict with your religious events, please let me know so that we can make arrangements for you. The following resources and statements are drawn directly from the University of Utah guidelines. If you have questions or concerns not answered below, please contact me directly so we can work together to answer and address them.
+
+1.	*Accommodation of Sincerely Held Beliefs*:  I will work with students who require schedule changes due to religious or other significant obligations. I will not consider any requests based on course content. No other area of study touches on more sensitive topics than the broad category of "public policy" (and at times disturbing forms of human misbehavior such as criminal law). Policy researchers must read about, talk about, and listen to information relating to very difficult subjects. Sometimes case descriptions can be quite graphic. Students are required to attend all classes and to read all the assignments. All assignments and lectures are related to our subject matter.
+
+2.	*The Americans with Disabilities Act*. The University of Utah seeks to provide equal access to its programs, services, and activities for people with disabilities. If you will need accommodations in this class, reasonable prior notice needs to be given to the [Center for Disability Services](https://disability.utah.edu/), 162 Olpin Union Building, (801) 581-5020. CDS will work with you and the instructor to make arrangements for accommodations. All written information in this course can be made available in an alternative format with prior notification to the Center for Disability Services.
+
+3.	*University Safety Statement*. The University of Utah values the safety of all campus community members. To report suspicious activity, call campus police at 801-585-COPS (801-585-2677). You will receive important emergency alerts and safety messages regarding campus safety via text message. For more information regarding safety and to view available training resources, including helpful videos, visit safeu.utah.edu. 
+
+4.	*Addressing Sexual Misconduct*. Title IX makes it clear that violence and harassment based on sex and gender (which Includes sexual orientation and gender identity/expression) is a civil rights offense subject to the same kinds of accountability and the same kinds of support applied to offenses against other protected categories such as race, national origin, color, religion, age, status as a person with a disability, veteran’s status or genetic information.  If you or someone you know has been harassed or assaulted, you are encouraged to report it to the Title IX Coordinator in the Office of Equal Opportunity and Affirmative Action, 135 Park Building, 801-581-8365, or the Office of the Dean of Students, 270 Union Building, 801-581-7066.  For support and confidential consultation, contact the Center for Student Wellness, 426 SSB, 801-581-7776.  To report to the police, contact the Department of Public Safety, 801-585-2677(COPS).
+
+5.	*Undocumented Student Support Statement*. Immigration is a complex phenomenon with broad impact—those who are directly affected by it, as well as those who are indirectly affected by their relationships with family members, friends, and loved ones. If your immigration status presents obstacles to engaging in specific activities or fulfilling specific course criteria, confidential arrangements may be requested from the Dream Center. Arrangements with the Dream Center will not jeopardize your student status, your financial aid, or any other part of your residence. The Dream Center offers a wide range of resources to support undocumented students (with and without DACA) as well as students from mixed-status families. To learn more, please contact the Dream Center at 801.213.3697 or visit the [Dream Center website](https://d.docs.live.net/88e07230498ff330/dream.utah.edu).
+
+6.	*Veterans’ Center*. If you are a student veteran, the U of Utah has a Veterans Support Center located in Room 161 in the Olpin Union Building. Hours: M-F 8-5 pm. Please visit their website for more information about what support they offer, a list of ongoing events, and links to outside resources: [Veteran's Center](http://veteranscenter.utah.edu/). Please also let me know if you need any additional support in this class for any reason.
+
+7.	*Wellness Statement*. Personal concerns such as stress, anxiety, relationship difficulties, depression, cross-cultural differences, etc., can interfere with a student’s ability to succeed and thrive at the University of Utah. For helpful resources, contact the Center for Student Wellness or call at 801-581-7776.
+
+8.	*English Language Learners*. If you are an English language learner, please be aware of several resources on campus that will support you with your language and writing development. These resources include the [Writing Center](http://writingcenter.utah.edu/), the [Writing Program](http://writingprogram.utah.edu/), and the [English Language Institute](http://continue.utah.edu/eli/). Please let me know if there is any additional support you would like to discuss for this class.
+
+9.	*LGBT Resources*: I am committed to inclusivity and respect for all students in the classroom, including and not limited to LGBT individuals. Additionally, the University of Utah has an LGBT Resource Center located in the Olpin Union Building, Room 409. Their website contains more information about the support they offer, a list of events, and links to additional resources: LGBT Resources.
+
+10.	*Names/Pronouns*. Class rosters are provided to the instructor with the student’s legal name as well as “Preferred first name” (if previously entered by you in the Student Profile section of your CIS account). While CIS refers to this as merely a preference, I will honor you by referring to you with the name and pronoun that feels best for you in class or on assignments. Please advise me of any name or pronoun changes so I can help create a learning environment in which you, your name, and your pronoun are respected. If you need any assistance or support, please reach out to the LGBT Resource Center: [LGBT Resources](http://lgbt.utah.edu/).
+
+11.	*Drop/Withdrawal*.  Please check the academic calendar for more information pertaining to dropping and withdrawing from a course. Withdrawing from a course, and other matters of registration, are the student’s responsibility. 
+
+12.	 *Student Code*: http://regulations.utah.edu/academics/6-400.php
+
+13.	 *Accommodation Policy (see Section Q)*: http://regulations.utah.edu/academics/6-100.php
+
+
+

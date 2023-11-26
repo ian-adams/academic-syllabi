@@ -1,0 +1,836 @@
+---
+output: 
+  stevetemplates::syllabus:
+    latex_engine: xelatex
+    dev: cairo_pdf
+geometry: margin=1in
+
+title: "CRJU 711: Police Practices & Problems"
+author: Ian T. Adams
+date: "Spring 2023"
+
+email: "ian.adams@sc.edu"
+web: "ianadamsresearch.com"
+officehours: "flexible, with notice"
+office: "Currell 114"
+classroom: "Currell 204"
+classhours: "Thursdays, 6-8:45pm"
+fontfamily: mathpazo
+fontsize: 11pt
+header-includes:
+   - \linespread{1.05}
+---
+ <!-- CCCCCCCCnncdxxxxxxx -->
+<!-- Fun fact: my cat added this comment as she walked over the keyboard while I was working on this template. -->
+<!-- I'm going to keep it going forward. Long live Queen Bea. -->
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(cache=FALSE, dev='pdf')
+knitr::opts_chunk$set(cache=F,
+                      fig.path = 'figs/',
+                      cache.path='cache/',
+                      warning=F,
+                      message=F)
+
+knitr::opts_chunk$set(
+                  fig.process = function(x) {
+                      x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
+                      if (file.rename(x, x2)) x2 else x
+                      }
+                  )
+
+
+advdate <- function(obj, adv) {
+ tmon <- obj + 7*(adv-1)
+ tfri <- obj + 4 + 7*(adv-1)
+ tmon <- format(tmon, format="%m/%d")
+ tfri <- format(tfri, format="%m/%d")
+ zadv <- sprintf("%02d", adv)
+ tmp <- paste("Week ",zadv,sep='',", ", tmon," - ",tfri)
+ return(tmp)
+}
+
+options(scipen=999)
+library(tidyverse)
+library(stevemisc)
+#library(ggpmisc)
+#library(anonymizer)
+# library(ggcal)
+#library(stringr)
+#library(kfigr)
+#library(broom)
+library(lubridate)
+library(here)
+library(kableExtra)
+
+
+
+
+
+# library(RefManageR)
+# library(knitcitations)
+# library(rcrossref)
+#bib <- ReadBib("~/Dropbox/master.bib")
+#myopts <- BibOptions(bib.style = "authoryear", style="latex", first.inits=FALSE, max.names = 20)
+
+# Create a calendar for your syllabus ----
+# Source: http://svmiller.com/blog/2020/08/a-ggplot-calendar-for-your-semester/
+
+# 1) what is the first Monday of the semester?
+# Any number of ways to identify dates in R, but we'll use {lubridate} and the ymd() function here.
+# Format: YYYYMMDD. In this example, 4 January 2021.
+
+mon <- ymd(20230109)
+
+# What are some dates you won't be here? In this example, I had a conference on 7 January 2021.
+# Spring Break was 15 March 2021 to 19 March 2021.
+# ymd(20211125), #for single day
+# 
+# seq(ymd(20211010),ymd(20211017), by=1)) #for sequence of days
+
+not_here_dates <- c(
+  # Spring Break
+  seq(ymd(20230305),ymd(20230312), by=1),
+  # ACJS 2023
+  seq(ymd(20230314),ymd(20230317), by=1))
+  
+  # # Thanksgiving
+  # seq(ymd(20221123),ymd(20221127), by=1),
+  # # General Election Day
+  #  ymd(20221108),
+  # # Southern ACJS
+  #  seq(ymd(20220913),ymd(20220915), by=1)
+  # )
+
+# You can adjust this as you see fit. Basically: add assignment types (e.g. papers, quizzes).
+# My intro class was fairly simple: just exams.
+#exam_dates <- c(ymd(20210218), ymd(20210401), ymd(20210429))
+
+exam_dates <- c(ymd(20230420), ymd(20230427))
+
+# What are the full dates of the semester? Here, I'll exclude exam week as I like to do.
+# In this case: 6 January to 23 April
+semester_dates <- seq(ymd(20230109), ymd(20230430), by=1)
+
+final_day <- mdy(04302023)
+
+# Custom function for treating the first day of the month as the first week 
+# of the month up until the first Sunday (unless Sunday was the start of the month)
+wom <- function(date) {
+    first <- wday(as.Date(paste(year(date),month(date),1,sep="-")))
+    return((mday(date)+(first-2)) %/% 7+1)
+  }
+
+# Create a data frame of dates, assign to Cal
+tibble(date = seq(ymd(20230101), ymd(20230430), by=1))  %>%
+  mutate(mon = lubridate::month(date, label=T, abbr=F), # get month label
+         wkdy = weekdays(date, abbreviate=T), # get weekday label
+         wkdy = fct_relevel(wkdy, "Sun", "Mon", "Tue", "Wed", "Thu","Fri","Sat"), # make sure Sunday comes first
+         semester = ifelse(date %in% semester_dates, 1, 0), # is date part of the semester?
+         exams = ifelse(date %in% exam_dates, 1, 0), # is it an exam?
+         not_here = ifelse(date %in% not_here_dates, 1, 0), # is it a day off?
+         day = lubridate::mday(date), # get day of month to add later as a label
+         # Below: our custom wom() function
+         week = wom(date)) -> Cal
+
+# Create a category variable, for filling.
+# I can probably make this a case_when(), but this will work.
+
+Cal %>%
+  mutate(category = NA,
+         category = ifelse(semester == 1, "Semester", category),
+         category = ifelse(semester == 1 & wkdy %in% "Thu", "Class Day", category),
+         #category = ifelse(semester == 1 & wkdy %in% "Tue", "Class Day", category),
+         category = ifelse(exams == 1, "Exams", category),
+         category = ifelse(is.na(category) | (semester == 1 & not_here == 1), "NA", category)) -> Cal 
+
+Cal %>% 
+  ggplot(.,aes(wkdy, week)) +
+  # custom theme stuff below
+  # theme_steve_web() + 
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank()) +
+  # geom_tile and facet_wrap will do all the heavy lifting
+  geom_tile(alpha=0.8, aes(fill=category), color="black", size=.45) +
+  facet_wrap(~mon, scales="free", ncol=3) +
+  # fill in tiles to make it look more "calendary" (sic)
+  geom_text(aes(label=day),family="Open Sans") +
+  # put your y-axis down, flip it, and reverse it
+  scale_y_reverse(breaks=NULL) +
+  # manually fill scale colors to something you like...
+  scale_fill_manual(values=c("Class Day"="steelblue", 
+                             "Semester"="lightsteelblue",
+                             "NA" = "white", # I like these whited out...
+                             "Exams"="indianred4"),
+                    #... but also suppress a label for a non-class semester day
+                    breaks=c("Class Day","Exams")) +
+  labs(fill = "", x="", y="",
+       caption = "Notable dates: Spring Break (March 5-12); American Criminal Justice Association Meeting (March 13-17); Final Presentation Weeks (April 20 and 27")  -> class_cal
+
+
+
+```
+
+```{r include=FALSE}
+
+## Just need to change up the 'firstday` for most semesters.
+
+library(tidyverse)
+library(lubridate)
+library(here)
+library(kableExtra)
+
+## for grading scheme
+
+grades <- read_csv(here("CRJU 314", "grading-scheme.csv"))
+
+
+
+firstday <- "2023-01-09"
+    
+meetings <- ymd(firstday) + c(0:16) * weeks(1)
+
+meeting_headers <- paste0("Week ", 1:16, ", ", months(meetings), " ", day(meetings))
+
+
+```
+
+# Course Description
+
+> "Our knowledge of any subject never goes beyond collecting observations and forming half-conscious expectations, until we find ourselves confronted with some experience contrary to those expectations." Charles Peirce (1929), "Guessing." *Hound & the Hare*.
+
+> "One of the beautiful things about science is that it allows us to bumble along, getting it wrong time after time, and feel perfectly fine as long as we learn something each time." Martin A. Schwartz (2008), ["The Importance of Stupidity in Scientific Research"](https://ir.stonybrook.edu/xmlui/bitstream/handle/11401/8083/schwartzimportanceofstupidityinscience.pdf?sequence=1)
+
+Policing is a constant source of fascination and the site of historical and ongoing debates about the proper role of the state and its power to coerce. In addition to its prominent place on television networks’ schedules, policing involves the use of of critical forms of governmental power: the power to compel, detain, interrogate, and use force. At the same time, policing *is not* just law enforcement: it also involves a range of administrative, managerial, and leadership issues that are essential to its effectiveness and legitimacy. Policing presents a number of questions central to social, legal, and political institutions.  This class is intended as an examination of policing, and how it functions within the context of criminal justice.  This course provides an analysis of both the traditional and contemporary issues within policing. Topics represent a wide variety of concerns, including such areas as administration, management, leadership, misconduct, police use of force, and the utilization of law enforcement to combat various types of crime.
+
+## Academic Bulletin
+
+Historical and contemporary role of the police, societal expectations, resource allocation, police policies, and the effectiveness of various police strategies in controlling crime.
+
+## Course Objectives
+
+By the end of this course, students should be able to:
+
+-  Understand the history and evolution of policing in the United States. 
+-  Identify and describe critical issues in modern policing.
+-  Connect real-world police activities to critical issues in policing.
+-  Develop critical thinking skills to evaluate and improve policing practices.
+-  Understand the role of research and evidence in policing and be able to connect policing research to policing practices.
+-  Analyze the use of force by police and its relationship to constitutional rights.
+-  Describe efforts to reform law enforcement agencies.
+-  Critically assess police policy, action, and goals.
+-  Effectively communicate regarding policing concepts.
+
+
+## Office Hours
+
+What are [office hours](https://vimeo.com/270014784) anyway? I take a very liberal view of the word "office" and "hours." My office is in Currell 114, but I'm generally happy to meet in other campus locations as well. Most days, I'm literally sitting at a computer at home (or in a coffee shop on better days), webcam and phone at the ready, and am happy to jump into a quick conversation with any student, at any time. We can meet individually or as a small group, speak by phone, or via a video call. If you want to make any type of appointment, please send me an email with a list of times you are available to meet.  You can either use the built-in Blackboard messaging system, or email directly at ian.adams@sc.edu. 
+
+
+# Course Work
+
+This is a graduate-level class, and as such will require you to complete significant work. As an overview, you will be required to attend and actively, consistently participate in our class meetings; read multiple chapters and journal articles every week; submit and present reading breakdowns to the rest of the class; and submit and present a final research proposal. 
+
+You will be required to read at a graduate level in this class. The coursework and discussions are oriented around a relatively heavy reading load of a minimum of five chapters or journal articles per week. My general approach is to orient you to broad issues in the field through chapters, and then to illustrate how authors are thinking about pushing the field further through scientific research and articles. I also plan on exposing you to the research *process*, through reading pre-prints and working papers from researchers working at the bleeding edge of policing research. Hopefully this will help you see research as a path, rather than a destination, in a scholarly career.
+
+Most, but not all, of the articles will be quantitative in nature. You do not need to be a quantitative methodologist in order to be successful, but you will benefit from having taken an introduction to graduate level statistics course. 
+
+##  Required Textbook
+
+Dunham, R. G., Alpert, G. P., & McLean, K. D. (2020). *Critical Issues in Policing: Contemporary Readings*, (Eighth Edition). Waveland Press.
+
+Worden, R. E., & McLean, S. J. (2017). Mirage of Police Reform. In University of California Press. University of California Press. https://doi.org/10.1525/luminos.30
+
+
+The Dunham, Alpert, & McLean (2020) textbook is required for a student to be successful in this course. You **must** have access to the textbook. Previous editions will not suffice, as policing research moves quickly, and earlier editions will not have the full range of readings necessary. 
+
+Save your money! The Worden and McLean (2017) book is provided as a PDF on Blackboard.
+
+There are other required readings each week. Readings from outside the required textbook will be provided through Blackboard. See class schedule below for an outline of each weeks' topic and associated readings. Note these readings are required, and form the basis for the reading breakdowns each week.
+
+## Reading Breakdowns
+
+During our first class meeting, each student will sign up for **two** reading breakdowns during the semester. Each breakdown will have two students, and the two breakdowns must be done on different weeks with a different partner. Readings are listed in the [references section of this syllabus](#references).
+
+Each week, selected students will provide a reading breakdown based on that week's readings, as well as lead a class discussion on the paper/topics of interest. The reading breakdowns are intended to provide a record for students to refer to when confronted with the topics our assigned readings are on. I will provide an example breakdown for students to use when writing their own.
+
+While not exclusive to the following, questions that should be answered at a minimum are:
+
+-   What is the major research question being investigated? 
+-   What is the dependent variable or outcome being explained? 
+-   What is the independent variable(s) being highlighted by the author as driving the outcome? 
+-   How are each of these variables defined and measured, and using what data? 
+-   Where did the author(s) get his or her data from? 
+-   What kind of methodology was used to draw causal inferences? 
+-   What findings did the authors provide?
+-   What are related but unanswered questions on this topic?
+-   Provide at least five discussion questions for the class.
+
+**Please note**: Every student is still responsible for reading everything assigned, *before* class (including the first week). The purpose of the weekly breakdowns is to learn *how* to effectively read and critique a scholarly paper, and provide information you can use as you progress in your graduate career. 
+
+## Final Paper and Presentation Information
+
+In this class you will have a final paper and presentation. These are worth substantial points and will heavily influence your final grade. 
+
+Each student will select a topic on which to write a research proposal and make an oral presentation to the class based upon its content. The written proposal should be 10 – 15 pages (double-spaced, APA style) and the oral presentation should be 10 – 15 minutes (or 20 including Q&A). Oral presentations will take place during our last two classes. We will discuss this assignment in more detail later in the semester. Topics must be approved by me, and should be submitted in writing (approx. one page) no later than **March 16, 2023**. The written proposal is due no later than **April 20, 2022**. 
+
+The details of the final research proposal are to be negotiated between the student and professor. However, there are some requirements that will apply across students. The proposal can make use of secondary data, but *must* include at least a plan to collect original data. The proposal must also be informed by police practitioner perspectives, which will be collected through a minimum of two ride-alongs at two different agencies, and occur at two different shifts. At least one of the two must include the perspective of a street-level practitioner. Remember - research proposals do not appear in a moment, but develop over the course of studying a topic. You are encouraged to begin thinking about the proposal, developing its structure, and even writing on it, early in the course.
+
+## Grading
+
+The course follows the university's grading scheme. Grades do not round up - you must clear the given percentages for each grade level. I would be delighted to be able to give every student an A. However, to achieve the highest grades, it is up to you to be consistent, motivated, and engaged. If you want an A, your best course of action: turn in every assignment on time, read all assigned materials, and show up to every class. 
+
+```{r remedy003, echo=FALSE}
+## for grading scheme
+
+grades <- read_csv(here("CRJU 711", "Spring 2023", "grading-scheme.csv"))
+
+kbl(grades, "latex")
+
+```
+
+### Grading and Points Distribution
+
+This class has *approximately* 300 points available through in-class participation, reading breakdowns, presentations, and final research proposal:
+
+- Participation - 25 points - About **8%** of your grade
+- Reading Breakdowns (4) - 100 points - About **33%** of your grade
+- Research Topic Proposal - 25 points - About **8%** of your grade
+- Final Research Presentation - 50 points - About **16%** of your grade
+- Final Research Proposal - 100 points - About **33%** of your grade
+
+Please keep in mind that these are approximations. If situations arise that require me to adjust these, I will communicate in class.
+
+### Contested Grades
+
+If you would like an assignment to be regraded, please email me in advance of our meeting. In this email, please state clearly what the issue is and the reasons that you feel justify an adjustment to your grade. Once I receive your email, we will schedule an in-person meeting to discuss your request. Please be aware, if I agree to regrade, the entire assignment will be evaluated again. This means that your grade can be lowered as well as raised. The new grade will be final. 
+
+If you just have concerns about a certain test item, there is no need to request a full regrade. Simply email me and we will discuss, or bring it up in class. Note that no regrading will be done for the final essay, as the semester will have ended.
+
+### Professors HATE this one simple trick: Grade Grubbing, Grade Lawyering, & Grade Begging {#grubbing}
+
+"Grade grubbing" [is the act of trying to get a higher grade on an assignment](https://www.science.org/content/article/confessions-former-grade-grubber) or test by pestering the teacher or using dishonest methods. This often involves repeatedly asking the teacher for extra credit opportunities or trying to convince the teacher to change a grade. Students may engage in grade grubbing because they are afraid of getting a low grade or because they are overly focused on getting good grades.
+
+[You should avoid grade grubbing at all costs](https://marktomforde.com/academic/undergraduates/GradeGrubbing.html). It will not help you in this course. 
+
+Grade grubbing is not a healthy or effective way to improve grades. It can be stressful and time-consuming, and it often leads to frustration and disappointment. Furthermore, it is dishonest and can damage the relationship between the student and the teacher. Instead of grade grubbing, students should focus on understanding the material and doing their best on each assignment. This will not only help them to get better grades, but it will also help them to learn and grow as individuals.
+
+### Late Policy
+
+All assignments submitted after the due date are subject to a **ten percent deduction**. An additional ten percent is deducted for each additional 24 hours the assignment is late. Please note the specific due dates for all assignments. **No deadlines past `r format(final_day, '%B %d, %Y')` will be considered or accepted**. Missing submissions will be awarded zero points automatically. Perhaps the the most important point -- contact me beforehand if you are experiencing difficulties that will impact your ability to turn in work! Reaching out after the due date has passed is not helpful to you or me.
+
+# Contacting the Instructor
+
+Normally, the fastest way to contact me is through the email above. I actively check and respond to emails throughout the day. I will always try to respond to your email within 72 business hours (i.e., Monday through Friday, exclusive of holidays). If you have a more urgent request, please note that within the subject line of your email.
+
+Be sure to set your Blackboard settings such that you are notified when course messages are sent. All communications between students and instructors are to be respectful in content and professional in tone. **Nonprofessional communications are likely to be ignored**. If responded to, they will be responded to with a request to rewrite/rephrase according to these communication expectations. In the case of emails and Blackboard messages, this means:
+
+-  Avoiding inappropriate slang and informality (e.g., "Yo dude").
+-  Using salutations (e.g., “Hello…”), closing statements (e.g., “Thank you for your attention to…”), and closings (e.g., “Best regards”). 
+-  Stating the purpose of the email and including background information to enable the instructor to understand and respond to the email.
+-  Provide evidence of the concern. Do not grade grub [(see above)](#grubbing).
+-  Using complete sentences and refraining from using profanity.
+
+\newpage
+
+# Class Schedule
+
+Students must read all assigned material prior to our class session.  Important: class readings are subject to change, contingent on mitigating circumstances and the progress we make as a class.  Students are encouraged to attend lectures and check the course Blackboard website for updates. See attendance policy for further details.
+
+This syllabus includes a calendar to provide an overview for the course. The semester is in light blue, meeting days are highlighted in darker blue. Final exam week is highlighted in red. If a date is white, that means no class due to breaks. 
+
+```{r calendar, echo=F, eval=T, fig.cap="Calendar for CRJU 711: Policing Practices & Problems, Spring 2023",  warning=F, fig.width=11, fig.height=7}
+
+class_cal
+
+```
+
+This course is arranged into topics for each week, which correspond with our textbook chapters. Please see the Blackboard course for details and links for each week's activities. Note that the dates below mark the *Monday at the start of the week,* not the date of our class meetings, which are on Thursdays. **You are expected to still complete the week's reading even if we are not meeting on both class days!**
+
+The assignments set out in this syllabus are not set in stone; we may make adjustments over the course of the semester depending on where our combined interests take us.  At various points in the semester, I may assign additional readings that provide different perspectives or raise new questions about the topics we cover in class.  I will provide you with as much notice as possible before making any changes. Alterations are announced *in class*. If you miss a class, it is your responsibility to check with class colleagues, see the [attendance section](#attendance) of this syllabus for details.
+
+Each of the following weeks has a topical header, plus required readings for the week. Readings marked with two asterisks (**) will be assigned for reading breakdowns on our first day of class.
+
+##  `r meeting_headers[1]` : 
+
+**Topics:** Class Introduction, Readings Selection, and Overview
+
+These readings should be completed prior to our first class!
+
+-   Syllabus
+-   DAM Ch. 1 (Dunham & Alpet) Foundation of Police Role
+-   DAM Ch. 2 (Uchida) Historical Overview of the American Police
+-   DAM Ch. 4 (Lum & Koper) What is Evidence-Based Policing?
+-   Thacher 2022
+-   Ratcliffe (2017): (short blog) [Policing explained in a few graphs](https://www.jratcliffe.net/post/policing-explained-in-a-few-graphs)
+
+
+##  `r meeting_headers[2]` : 
+
+**Topics:** Theory and Function of Police
+
+-   Bittner (1990)
+-   Bittner (1967)
+-   Crank & Langworthy (1992)
+-   Ratcliffe (2021)**
+-   Lum et al (2022)**
+
+
+##  `r meeting_headers[3]` :
+
+**Topics:** Police Culture & Socialization
+
+-   DAM Ch. 10 (Paoline) (Re)Taking Stock: Toward a Richer Understanding of Police Culture
+-   DAM Ch. 12 (Van Maanen) The Asshole
+-   DAM Ch. 16 (Alpert, Noble, & Rojek) Solidarity and the Code of Silence
+-   Burke (2022)
+-   Waddington (1999)
+-   Ingram, Terrill, & Paoline (2018)**
+-   Brewer (2022)**
+-   Sierra-Arevalo (2019)**
+-   Ouellet, Hashimi, & Vega Yon (2022)**
+
+##  `r meeting_headers[4]` : 
+
+**Topics:** Police Discretion -- Guest speaker [Dr. Wendy Regoeczi](https://sc.edu/study/colleges_schools/artsandsciences/criminology_and_criminal_justice/our_people/directory/regoeczi_wendy.php)
+
+-   Mastrofski (2004)
+-   Bayley (2011)
+-   Dilulio (1994)
+-   Regoeczi & Kent (2014)
+-   Adams, Mourtgos, & Mastracci (2021)**
+-   Huff (2021)**
+-   Grosjean, Masera, & Yousaf (2022)**
+-   Chalfin & Goncalves (preprint)**
+
+##  `r meeting_headers[5]` :
+
+**Topics:** Police Operations -- Guest Speaker [Dr. Cory Schnell](https://sc.edu/study/colleges_schools/artsandsciences/criminology_and_criminal_justice/our_people/directory/schnell_cory.php)
+
+-   DAM Ch. 28 (Lawson & Wolfe) Organizational Justice
+-   DAM Ch. 21 (Todak & March) De-escalation
+-   DAM CH. 8  (Cordner) Community Policing
+-   DAM CH. 9 (Nix) Procedural Justice in Policing
+-   Braga et al (2019)**
+-   Lewis & Usmani (2022)**
+-   Schnell study TBD
+
+##  `r meeting_headers[6]` :
+
+**Topics:** Misconduct, Disparity, and Accountability
+
+-   DAM Ch. 15 (Rojek, Decker & Wagner) Addressing Police Misconduct
+-   Epp, et al. (2017), Ch. 7
+-   Tregle, et al. (2018)**
+-   Cubitt, Gaub, & Holtfreter (2022)**
+-   Chalfin & Kaplan (2021)**
+
+##  `r meeting_headers[7]` :
+
+**Topics:** Human Capital in Policing
+
+-   DAM Ch. 28 (Lawson & Wolfe) Organizational Justice and Policing
+-   McCarty et al (2019)
+-   Shane (2010)
+-   Ba et al. (2022)**
+-   Mourtgos, Adams, & Nix (2022)**
+-   Huff & Todak (2022)
+-   Adams et al. (preprint) - If the Face Fits**
+
+
+##  `r meeting_headers[8]` :
+
+**Topics:** Use of Force I - The Standards -- Guest Speaker [Professor Seth Stoughton](https://sc.edu/study/colleges_schools/law/faculty_and_staff/directory/stoughton_seth.php)
+
+-   DAM, Ch. 17 (Stoughton) Regulation of Police Violence
+-   Mclean, Stoughton, & Alpert (2022)
+-   Zimring (2020)
+-   Sandel et al. (2021)**
+-   Mourtgos & Adams (2020)**
+-   Martaindale et al. (2022)**
+
+
+##  `r meeting_headers[9]` :
+
+**Topics:** Spring Break - No class
+
+-   Read something for fun.
+
+
+##  `r meeting_headers[10]` :
+
+**Topics:** Researching the Police; ACJS Spring Meeting - **(TOPICS DUE MARCH 16)**
+
+This week's readings should still be completed on your own!
+
+-   Todak et al. (2021)
+-   Worden & McLean (2022)
+-   Nix et al (2019)
+-   Brunson & Miller (2023)
+-   Read more on your topic! More.
+
+
+##  `r meeting_headers[11]` :
+
+**Topics:** Use of Force II - The Tools
+
+-   DAM Ch. 31 (BWCs)
+-   Yokum et al. (2019)
+-   Ariel et al. (2015)**
+-   Miller & Chillar (2021)
+-   DAM Ch. 22 (Tasers)
+-   White & Ready (2007)**
+-   Alpert & Dunham (2010)
+-   Adams et al. (preprint) "Defanged"**
+
+
+##  `r meeting_headers[12]` :
+
+**Topics:** Use of Force III - The Practice -- Guest Speaker [Dr. Justin Nix](https://jnix.netlify.app/)
+
+-   DAM Ch. 18 (Noble & Alpert) State-Created Danger
+-   DAM Ch. 13 (McLean et al.) Warriors or Guardians
+-   Cubitt & Nix (2022)
+-   Sierra-Arévalo & Nix (2020)**
+-   Piza et al. (2023)**
+-   Nix & Shjarback (2021)**
+-   Taylor (2019)
+
+
+##  `r meeting_headers[13]` :
+
+**Topics:** Police Reform
+
+-   DAM 33 (Shjarback) Early Intervention Systems
+-   James, James, & Dotson (2021)
+-   Worden & McLean (2017) - Ch. 1, 3, 9, 10
+-   Wood, Tyler, & Papachristos (2020)**
+-   Presidential Task Force on 21st Century Policing (2015) (skim this one)
+-   Mummolo (2018)**
+-   Adams, et al. (preprint) "Public Pressure or Peer Influence"**
+
+##  `r meeting_headers[14]` :
+
+**Topics:** What Works? Sorting Through Evidence & Causal Claims
+
+-   Chalfin et al. (2022)**
+-   Ratcliffe et al. (2011)
+-   Lum et al. (2020) BWCs
+-   Lum et al. (2011) Evidence-based Policing
+-   Shjarback, et al. (2021)**
+
+##  `r meeting_headers[15]` :
+
+**Topics:** Student Presentations I **(Research proposals due April 20)**
+
+-   Read more
+-   Read something for fun. 
+
+##  `r meeting_headers[16]` :
+
+**Topics:** Student Presentations II
+
+-   Read more
+-   Read something for fun. 
+
+
+
+\newpage
+
+## References (may change during semester) {#references}
+
+Adams, Ian T., Joshua McCrain, et al. 2022. “Public Pressure or Peer Influence: What Shapes Police Executives’ Views on Civilian Oversight?” [Preprint](https://osf.io/preprints/socarxiv/mdu96/).
+
+Adams, Ian T., Scott M. Mourtgos, and Sharon H. Mastracci. 2021. “High-Stakes Administrative Discretion: What Drives Body-Worn Camera Activations?” *Public Administration Review 81*(4): 691–703.
+
+Adams, Ian T., Scott M. Mourtgos, Kyle McLean, and Geoffrey P. Alpert. 2022. “Defanged.” [Preprint](https://osf.io/gkq42/).
+
+Adams, Ian T., Scott M. Mourtgos, Christopher A. Simon, and Nicholas P. Lovrich. 2022. “If The Face Fits: Predicting Future Promotions from Police Cadets’ Facial Traits.” [Preprint](https://osf.io/wq8da/).
+
+Alpert, Geoffrey P., and Roger G. Dunham. 2010. “Policy and Training Recommendations Related to Police Use of CEDs: Overview of Findings From a Comprehensive National Study.” *Police Quarterly 13*(3): 235–59.
+
+Ariel, B., Farrar, W. A., & Sutherland, A. (2015). The Effect of Police Body-Worn Cameras on Use of Force and Citizens’ Complaints Against the Police: A Randomized Controlled Trial. *Journal of Quantitative Criminology, 31*(3), 509–535. [Link](https://doi.org/10.1007/s10940-014-9236-3)
+
+Ba, Bocar et al. 2022. “Who Are the Police? Descriptive Representation in the Coercive Arm of Government.” Preprint.
+
+Bayley, David H. 2011. “Et Tu Brute: Are Police Agencies Managed Better or Worse than Universities?” *Police Practice and Research 12*(4): 313–16.
+
+Bittner, Egon. 1967. “The Police on Skid-Row: A Study of Peace Keeping.” *American Sociological Review 32*(5): 699–715.
+
+———. 1990. “Florence Nightingale in Pursuit of Willie Sutton.” In *Aspects of Police Work*, Boston, MA: Northeastern University Press.
+
+Boehme, Hunter M., Christi Metcalfe, and Robert J. Kaminski. 2022. “Female Officers in Use-of-Force Encounters: An Examination of Potential Correlates.” *Police Quarterly 25*(4): 497–534.
+
+Braga, Anthony A., Brandon S. Turchan, Andrew V. Papachristos, and David M. Hureau. 2019. “Hot Spots Policing and Crime Reduction: An Update of an Ongoing Systematic Review and Meta-Analysis.” 
+*Journal of Experimental Criminology 15*(3): 289–311.
+
+Brewer, C. G. (2022). r/ProtectandServe: An exploration of the virtual canteen culture regarding police misconduct. *Policing and Society, 0*(0), 1–16. [Link](https://doi.org/10.1080/10439463.2022.2029434)
+
+Brunson, Rod K., and Ayanna Miller. 2023. “Police Observational Research in the Twenty-First Century.” *Annual Review of Criminology 6*(1): null.
+
+Burke, Patrick J. 2022. “‘He’s Agonal’: An Insider’s Look into the Impact of Moral Injury Suffered While Policing on the Westside of Chicago.” *Journal of Contemporary Ethnography*: 08912416221087362.
+
+Chalfin, Aaron, Benjamin Hansen, Emily K. Weisburst, and Morgan C. Williams Jr. 2022. “Police Force Size and Civilian Race.” *American Economic Review: Insights 4*(2): 139–58.
+
+Chalfin, A., & Goncalves, F. (2022). ‪Professional Motivations in the Public Sector: Evidence from Police Officers‬.*preprint*
+
+Crank, J., & Langworthy, R. (1992). Institutional Perspective on Policing. *Journal of Criminal Law and Criminology, 83*(2), 338.
+
+Cubitt, Timothy I. C., and Justin Nix. 2022. “A Multi-Site Study of Firearms Displays by Police at Use of Force Incidents.” *Police Quarterly*: 10986111221136230.
+
+Dilulio Jr, John D. 1994. “Principled Agents: The Cultural Bases of Behavior in a Federal Government Bureaucracy.” *Journal of Public Administration Research and Theory 4*(3): 277–318.
+
+Epp, Charles R., Steven Maynard-Moody, and Donald P. Haider-Markel. 2014. *Pulled over: How Police Stops Define Race and Citizenship*. Chicago, IL: University of Chicago Press.
+
+Grosjean, Pauline, Federico Masera, and Hasin Yousaf. 2022. “Inflammatory Political Campaigns and Racial Bias in Policing.” *The Quarterly Journal of Economics*: qjac037.
+
+Huff, Jessica. 2021. “Understanding Police Decisions to Arrest: The Impact of Situational, Officer, and Neighborhood Characteristics on Police Discretion.” *Journal of Criminal Justice 75*: 101829.
+
+Huff, Jessica, and Natalie Todak. 2022. “Promoting Women Police Officers: Does Exam Format Matter?” *Police Quarterly*: 10986111221101892.
+
+Ingram, Jason R., William Terrill, and Eugene A. Paoline Iii. 2018. “Police Culture and Officer Behavior: Application of a Multilevel Framework.” *Criminology 56*(4): 780–811.
+
+James, Stephen, Lois James, and Liz Dotson. 2021. “Evaluating the Effectiveness of a Police Department’s Early Intervention System.” *Journal of Experimental Criminology 17*(3): 457–71.
+
+Lum, Cynthia, Christopher S. Koper, and Xiaoyun Wu. 2022. “Can We Really Defund the Police? A Nine-Agency Study of Police Response to Calls for Service.” *Police Quarterly 25*(3): 255–80.
+
+Martaindale, M. H., Sandel, W. L., Duron, A., & Blair, J. P. (2022). @#%$!: The Impact of Officer Profanity on Civilians’ Perception of What Constitutes Reasonable Use of Force. *Police Quarterly (0)*0. [Link](https://doi.org/10.1177/10986111221111332)
+
+Mastrofski, Stephen D. 2004. “Controlling Street-Level Police Discretion.” *Annals of the American Academy of Political and Social Science 593*(1): 100–118.
+
+McCarty, William P., Hani Aldirawi, Stacy Dewald, and Mariana Palacios. 2019. “Burnout in Blue: An Analysis of the Extent and Primary Predictors of Burnout Among Law Enforcement Officers in the United States.” *Police Quarterly 22*(3): 278–304.
+
+Miller, Joel, and Vijay F. Chillar. 2021. “Do Police Body-Worn Cameras Reduce Citizen Fatalities? Results of a Country-Wide Natural Experiment.” *Journal of Quantitative Criminology*. [Link](https://doi.org/10.1007/s10940-021-09513-w).
+
+Mourtgos, Scott M., and Ian T. Adams. 2020. “Assessing Public Perceptions of Police Use-of-Force: Legal Reasonableness and Community Standards.” *Justice Quarterly 37*(5): 869–99.
+
+Mourtgos, Scott M., Ian T. Adams, and Justin Nix. 2022. “Elevated Police Turnover Following the Summer of George Floyd Protests: A Synthetic Control Study.” *Criminology & Public Policy 21*(1): 9–33.
+
+Mummolo, Jonathan. 2018. “Modern Police Tactics, Police-Citizen Interactions, and the Prospects for Reform.” *The Journal of Politics 80*(1): 1–15.
+
+Nix, Justin, Justin T. Pickett, Hyunin Baek, and Geoffrey P. Alpert. 2019. “Police Research, Officer Surveys, and Response Rates.” *Policing and Society 29*(5): 530–50.
+
+Nix, Justin, and John A. Shjarback. 2021. “Factors Associated with Police Shooting Mortality: A Focus on Race and a Plea for More Comprehensive Data.” *PLOS ONE 16*(11): e0259024.
+
+Ouellet, M., Hashimi, S., & Vega Yon, G. G. (2022). Officer Networks and Firearm Behaviors: Assessing the Social Transmission of Weapon-Use. *Journal of Quantitative Criminology*. [Link](https://doi.org/10.1007/s10940-022-09546-9)
+
+Piza, Eric L., Nathan T. Connealy, Victoria A. Sytsma, and Vijay F. Chillar. 2023. “Situational Factors and Police Use of Force across Micro-Time Intervals: A Video Systematic Social Observation and Panel Regression Analysis.” *Criminology 0*(0). [Link](http://onlinelibrary.wiley.com/doi/abs/10.1111/1745-9125.12323).
+
+President’s Task Force on 21st Century Policing. 2015. *Final Report of the President’s Task Force on 21st Century Policing*. Washington, DC: Office of Community Oriented Policing Services.
+
+Ratcliffe, Jerry H. 2021. “Policing and Public Health Calls for Service in Philadelphia.” *Crime Science 10*(1): 5.
+
+Ratcliffe, Jerry H., Travis Taniguchi, Elizabeth R. Groff, and Jennifer D. Wood. 2011. “The Philadelphia Foot Patrol Experiment: A Randomized Controlled Trial of Police Patrol Effectiveness in Violent Crime Hotspots.” *Criminology 49*(3): 795–831.
+
+Regoeczi, W., & Kent, S. (2014). Race, poverty, and the traffic ticket cycle: Exploring the situational context of the application of police discretion. *Policing: An International Journal of Police Strategies & Management, 37*(1), 190–205. [Link](https://doi.org/10.1108/PIJPSM-06-2013-0060)
+
+Sandel, W. L., Martaindale, M. H., & Blair, J. P. (2021). A scientific examination of the 21-foot rule. *Police Practice and Research, 22*(3), 1314–1329. https://doi.org/10.1080/15614263.2020.1772785
+
+Schwartz, Martin A. 2008. “The Importance of Stupidity in Scientific Research.” *Journal of Cell Science 121*(11): 1771–1771.
+
+Shane, Jon M. 2010. “Organizational Stressors and Police Performance.” *Journal of Criminal Justice 38*(4): 807–18.
+
+Shjarback, John A., Michael D. White, and Stephen A. Bishopp. 2021. “Can Police Shootings Be Reduced by Requiring Officers to Document When They Point Firearms at Citizens?” *Injury Prevention*. [Link](https://injuryprevention.bmj.com/content/early/2021/01/03/injuryprev-2020-043932)
+
+Sierra-Arévalo, Michael. 2019. “The Commemoration of Death, Organizational Memory, and Police Culture.” *Criminology 57*(4): 632–58.
+
+———. 2021. “American Policing and the Danger Imperative.” *Law & Society Review 55*(1): 70–103.
+
+Sierra‐Arévalo, Michael, and Justin Nix. 2020. “Gun Victimization in the Line of Duty.” *Criminology & Public Policy 0*(0). [Link](http://onlinelibrary.wiley.com/doi/abs/10.1111/1745-9133.12507).
+
+Sierra-Arévalo, Michael, Justin Nix, and Bradley O’Guinn. 2022. “A National Analysis of Trauma Care Proximity and Firearm Assault Survival among U.S. Police.” *Police Practice and Research 23*(3): 1–9.
+
+Stoughton, Seth W., Jeffrey J. Noble, and Geoffrey P. Alpert. 2021. *Evaluating Police Uses of Force*. NYU Press.
+
+Taylor, Paul L. 2019. “Dispatch Priming and the Police Decision to Use Deadly Force.” *Police Quarterly 23*(3): 1098611119896653.
+
+Thacher, D. (2022). The emergence and spread of the summons in lieu of arrest, 1907–1980. *Journal of Criminal Justice, 0*(0)
+
+Todak, Natalie, Kyle McLean, Justin Nix, and Cory P. Haberman. 2021. “The LEADS Academics Program: Building Sustainable Police–Research Partnerships in Pursuit of Evidence-Based Policing.” In *The Globalization of Evidence-Based Policing*, Routledge.
+
+Tregle, Brandon, Justin Nix, and Geoffrey P. Alpert. 2018. “Disparity Does Not Mean Bias: Making Sense of Observed Racial Disparities in Fatal Officer-Involved Shootings with Multiple Benchmarks.” *Journal of Crime and Justice 0*(0): 1–14.
+
+Waddington, Peter AJ. 1999. “Police (Canteen) Sub-Culture. An Appreciation.” *The British Journal of Criminology* 39(2): 287–309.
+
+White, Michael D., and Justin Ready. 2007. “The TASER as a Less Lethal Force Alternative: Findings on Use and Effectiveness in a Large Metropolitan Police Agency.” *Police Quarterly 10*(2): 170–91.
+
+Wood, George, Tom R. Tyler, and Andrew V. Papachristos. 2020. “Procedural Justice Training Reduces Police Use of Force and Complaints against Officers.” *Proceedings of the National Academy of Sciences 117*(18): 9815–21.
+
+Worden, Robert E., and Sarah J. McLean. 2017. *Mirage of Police Reform.* University of California Press. [Link](https://www.luminosoa.org/site/books/m/10.1525/luminos.30/).
+
+Worden, Robert E, and Sarah J McLean. 2022. “Collaborative Practitioner–Researcher Partnerships in Policing: Two Researchers’ Reflections.” *Policing: A Journal of Policy and Practice*: paac036.
+
+Yokum, David, Anita Ravishankar, and Alexander Coppock. 2019. “A Randomized Control Trial Evaluating the Effects of Police Body-Worn Cameras.” *Proceedings of the National Academy of Sciences 116*(21): 10329–32.
+
+Zimring, Franklin E. 2020. “Police Killings as a Problem of Governance.” *The ANNALS of the American Academy of Political and Social Science 687*(1): 114–23.
+
+\newpage
+
+# Course Policies
+
+I will detail the various policies for this course below. These are very important to your success in this class, and you should be familiar with them!
+
+## Technology Requirements
+
+To participate in learning activities and complete assignments, you will need:
+
+-  Access to a working computer that has a current operating system with updates installed, plus speakers or headphones to hear lecture presentations (transcripts provided);
+-  Reliable Internet access and a USC email account;
+-  A current Internet browser that is compatible with Blackboard (Google Chrome is the recommended browser for Blackboard); 
+-  Microsoft Word as your word processing program; and
+-  Reliable data storage for your work, such as a USB drive or Office365 OneDrive cloud storage.
+
+If your computer does not have Microsoft Word, Office 365 ProPlus package is available to you free of charge and allows you to install Word, Excel, PowerPoint, Outlook, OneNote, Publisher, and Access on up to 5 PCs or Macs and Office apps on other mobile devices including tablets. Office 365 also includes unlimited cloud storage on OneDrive. To download Office 365 ProPlus, log into your student (University) email through a web browser, choose Settings (top right corner), and select software. If you have further questions or need help with the software, please contact the [Service Desk.](https://www.sc.edu/about/offices_and_divisions/university_technology_services/support/servicedesk.php)
+
+### Blackboard Information
+
+Minimum technical skills are needed in this course. All work in this course must be completed and submitted online through Blackboard. Therefore, you must have consistent and reliable access to a computer and the Internet. The minimum technical skills you have include the ability to:
+
+-  Organize and save electronic files;
+-  Use USC email and attached files;
+-  Check email and Blackboard daily;
+-  Download and upload documents;
+-  Locate information with a browser; and
+-  Use Blackboard.
+
+### Technical Support
+
+If you have problems with your computer, technology, IT-related questions, support, including Blackboard, please contact the Division of Information Technology (DoIT) Service Desk at (803) 777-1800 or submit an online request through the [Self-Service Portal](https://scprod.service-now.com/sp) or visit the [Carolina Tech Zone](https://sc.edu/about/offices_and_divisions/division_of_information_technology/end_user_services/available_technology_resources/carolina_tech_zone/). The Service Desk is open Monday – Friday from 8:00 AM – 6:00 PM (Eastern Time). If you are located in the Columbia, SC area, the Thomas Cooper Library at UofSC has computers for you to use in case you encounter computer issues/problems. If you are not located in the Columbia, SC area, most regional campuses and public libraries have computers for public use.
+
+## Academic Honesty
+
+Academic honesty is expected, and dishonesty will not be tolerated. The University policy on academic dishonesty can be found on the university website. An act of academic dishonesty will result in a failing course grade and a recommendation of additional disciplinary action. The faculty has adopted guidelines concerning what constitutes a violation of ethical standards for work completed in this course. Any of these violations will be considered academic dishonesty and treated as such. These guidelines are in addition to any university-wide guidelines concerning academic dishonesty, which may be in effect. All course assignments will be scanned for plagiarism, and any misconduct will result in a failing grade for the course. 
+
+1.	__Cheating__: the giving or receiving of any unauthorized assistance on any academic work;
+2.	__Plagiarism__: presenting the language, structures or ideas of another person or persons as one’s own academic work;
+3.	__Falsification__: Any untrue statement, either oral or written, concerning one’s own academic work or the academic work of another student, or the unauthorized alteration of any academic record; and
+4.	__Original work & "Self Plagiarism"__: Unless specifically allowed by the instructor, all academic work undertaken in a course must be original (i.e., it must not have been submitted in a prior course or be submitted in a course being taken concurrently).
+
+**Please** do not violate academic honesty standards, I have little patience for dishonesty, especially at this level of education. Violations will have serious consequences for your success in this class, and likely for your academic career.
+
+## Respectful & Appropriate Class Conduct
+
+The study of policing inherently centers on topics and issues for which individuals hold strong opinions, based on their personal values, beliefs, and interests. As a result, this course will challenge students to not only acknowledge and respect perspectives that differ from their own, but also challenge their own opinions and beliefs, and “step into” another’s perspective to consider the strengths and limitations of their own argument. 
+
+In order to facilitate this process and ensure a socially, emotionally, and psychologically safe environment, **respectful behavior is the expectation, norm, and requirement in this class.** Arguments and ideas may (and are expected to) be challenged, but personal attacks, disrespectful behavior, and/or hateful attitudes towards people, or any groups of people, will not be tolerated.
+
+## Attendance Policy {#attendance}
+
+Attendance is mandatory for our weekly class meetings. We all have busy lives, so being slightly late is not a problem (though not preferred), and I would much rather you miss ten minutes than a whole class. Students are expected to fully engage in the discussion in each class. *The purpose of the class is for everyone to discuss the readings, not to have them explained.* Please arrive ready at every class to engage deeply with the readings. Simply showing up and not participating to expectations will negatively reflect on your grade. 
+
+If you miss a class, you may obtain notes from a classmate. Subject to office hour and professional communication expectations, I will be happy to answer any questions you may have about the missed class, provided that you have obtained notes from a classmate. I will not provide a copy of my own notes or materials.
+
+## Instructor Expectations
+
+I commit to being your mentor and facilitator of the classroom experience, and to the following expectations for this course:
+
+- I will design the course to include lectures, readings materials, and assignments that will challenge students and will provide them with opportunities to learn and practice course content.
+- Though this course has online components, it is not a class that is run “automatically” by technology. I interact with the class via announcements, virtual and in-person office hours, emails/the Blackboard Inbox, feedback on assignments, discussion and lecture in class, and comments on lecture bulletin boards, among other methods.
+- I will respond to emails in a timely fashion. “Timely” in this instance means within 24-72 hours, exclusive of weekends and holidays. *Normally*, I am quite a bit faster, but like everyone else, life sometimes intervenes. If you do not hear from me within 72 hours, please email again.
+- I will be available for individual consultation via virtual office hours or email. 
+- I will provide feedback on assignments in a timely manner.
+- I will ensure and enforce a respectful atmosphere.
+- I will maintain a classroom that is open to questions, discussion, and ethical disagreement.
+- I will follow all [official University of South Carolina policies](https://academicbulletins.sc.edu/undergraduate/policies-regulations/undergraduate-academic-regulations/#text) regarding conduct in the classroom, incompletes, and accommodations. Accommodations will be considered on an individual basis and only with required documentation. See the **University Policies** section at the end of this syllabus for more information and resources.
+
+## Student Expectations
+
+Though there is some built in flexibility this course does have a structure and timeline, including due dates for course assignments. As such, the following is expected of all students in this class:
+
+- Students will log in to the course each week.
+- Students will attend class meetings each week.
+- Students may be expected to work with classmates; however, students are not expected to necessarily interact with their classmates in person. A good alternative to meeting in person would be online video conferencing, which allows students to find a time to meet that works best for their schedule. Depending on the assignment, students can also choose to interact with their classmates with whatever technology they are most comfortable with.
+- To do well, students must be self-motivated, organized, and willing to stay on top of their schedule. Students should take control of their learning while in this course.
+- Students will regularly check course announcements. The *Announcements* area is my official means of communication when distributing information to the entire class.
+- Students will update their Blackboard settings to ensure they receive timely notifications from the course.
+- If students have any questions, are struggling with course materials, or need further assistance from their instructor, they will take the initiative to contact their instructor via the Inbox feature in Blackboard or via email. Email is not perfect; sometimes, messages sent to instructors are lost before they are read. If you do not hear back from your instructor within 72 hours after sending a message, please contact me again.
+- Students will engage with the course, students, and the instructor in a respectful and professional manner at all times.
+
+## Copyright/Fair Use
+
+I will cite and/or reference any materials that I use in this course that I do not create.  You, as students, are expected to not distribute any of these materials, resources, quizzes, tests, homework assignments, etc. (whether graded or ungraded).
+
+
+# University Policies
+
+It is my intent that students from all diverse backgrounds and perspectives be well served by this course, that students’ learning needs be addressed both in and out of class, and that the diversity that students bring to this class be viewed as a resource, strength, and benefit. It is my intent to present materials and activities that are respectful of diversity: gender, sexuality, disability, age, socioeconomic status, ethnicity, race, and culture. Your suggestions are encouraged and appreciated. Please let me know ways to improve the effectiveness of the course for you personally or for other students or student groups. In addition, if any of our class meetings conflict with your religious events, please let me know so that we can make arrangements for you. The following resources and statements are drawn directly from the University of South Carolina policies, values, and mission. If you have questions or concerns not answered below, please contact me directly so we can work together to answer and address them.
+
+*Accommodation of Sincerely Held Beliefs*:  I will work with students who require schedule changes due to religious or other significant obligations. I will not consider any requests based on course content. No other area of study touches on more sensitive topics than the broad category of "public policy" (and at times disturbing forms of human misbehavior such as criminal law). Policy researchers must read about, talk about, and listen to information relating to very difficult subjects. Sometimes case descriptions can be quite graphic. Students are required to attend all classes and to read all the assignments. All assignments and lectures are related to our subject matter.
+
+*Veterans and Military Services*. If you are a student veteran or military services member, the University of South Carolina  has a Veterans and Military Services Center, located at 901 Sumter Street, Suite 105. Hours: M-F 0830a-1700 hours. Please visit their website for more information about what support they offer, a list of ongoing events, and links to outside resources: [Veterans and Military Services](https://sc.edu/about/offices_and_divisions/veterans_and_military_services/index.php). Please also let me know if you need any additional support in this class for any reason.
+
+*Diversity and Inclusion*:  The university is committed to a campus environment that is inclusive, safe, and respectful for all persons, and one that fully embraces the Carolinian Creed. To that end, all course activities will be conducted in an atmosphere of friendly participation and interaction among colleagues, recognizing and appreciating the unique experiences, background, and point of view each student brings. You are expected at all times to apply the highest academic standards to this course and to treat others with dignity and respect.
+	
+*Accessibility, Disability, and Triggers*:  I am committed to ensuring course accessibility for all students. If you have a documented disability and expect reasonable accommodation to complete course requirements, please notify me at least one week before accommodation is needed. Please also provide [SDRC](https://sc.edu/about/offices_and_divisions/student_disability_resource_center/) documentation to me before requesting accommodation. Likewise, if you are aware of cognitive or emotional triggers that could disrupt your intellectual or mental health, please let me know so that I can be aware in terms of course content.
+
+*Diversity, Ethics, and the Carolinian Creed*:  This course works to foster a climate free of harassment and discrimination, and it values the contributions of all forms of diversity. The decision to enter university and pursue advanced study is a choice that entails commitment to personal ethics expressed in the [Carolinian Creed](www.sa.sc.edu/creed): “I will discourage bigotry, while striving to learn from differences in people, ideas and opinions.” Likewise, the [Student Code of Conduct STAF 6.26](http://www.sc.edu/policies/ppm/staf626.pdf) stresses, “The University of South Carolina strives to maintain an educational community that fosters the development of students who are ethical, civil and responsible persons.”
+
+*Title IX and Gendered Pronouns*:  This course affirms equality and respect for all gendered identities and expressions. Please don’t hesitate to correct me regarding your preferred gender pronoun and/or name if different from what is indicated on the official class roster. Likewise, I am committed to nurturing an environment free from discrimination and harassment. Consistent with Title IX policy, please be aware that I as a responsible employee am obligated to report information that you provide to me about a situation involving sexual harassment or assault. 
+
+*Values [credit to Dr. David Moscowitz]*:  Two core values, inquiry and civility, govern our class. Inquiry demands that we all cultivate an open forum for exchange and substantiation of ideas. Strive to be creative, to take risks, and to challenge our conventional wisdom when you see the opportunity. Civility supports our inquiry by demanding ultimate respect for the voice, rights, and safety of others. Threatening or disruptive conduct may result in course and/or university dismissal. Civility also presumes basic courtesy: please be well rested, on time, and prepared for class, and silencing all personal electronic devices. My perspective is that we never cease being students of this world, so I believe that attentive, reflective people always have something to learn from others. Good discussions can be energetic and passionate but are neither abusive nor offensive. Vibrant, vigorous inquiry derives from discussions that:
+
+-  challenge, defend, and apply different ideas, theories, perspectives, and skills, 
+-  extend a body of knowledge into different arenas and applications, and 
+-  result in a synergy that compels us to seek resolution to these discussions.
+
+# Academic Success
+
+(@) Disability Services
+
+[Student Disability Resource Center](http://www.sa.sc.edu/sds/): The Student Disability Resource Center (SDRC) empowers students to manage challenges and limitations imposed by disabilities. Students with disabilities are encouraged to contact me to discuss the logistics of any accommodations needed to fulfill course requirements (within the first week of the semester). In order to receive reasonable accommodations from me, you must be registered with the Student Disability Resource Center (1705 College Street, Close-Hipp Suite 102, Columbia, SC 29208, 803-777-6142). Any student with a documented disability should contact the SDRC to make arrangements for appropriate accommodations.
+
+(@) Student Success Center
+
+In partnership with UofSC faculty, the Student Success Center (SSC) offers a number of programs to assist you in better understanding your course material and to aid you on your path to success. SSC programs are facilitated by professional staff, graduate students, and trained undergraduate peer leaders who have previously excelled in their courses. Resources available to you in this course may include:
+
+-  Peer Tutoring: You can make a one-on-one appointment with a [Peer Tutor](www.sc.edu/success).  Drop-in Tutoring and Online Tutoring may also be available for this course. Visit their website for a full schedule of times, locations, and courses.
+-  Supplemental Instruction (SI): SI Leaders are assigned to specific sections of courses and hold three weekly study sessions. Sessions focus on the most difficult content being covered in class. The SI Session schedule is posted through the SSC website each week and will also be communicated in class by the SI Leader.
+-  Peer Writing: Improve your college-level writing skills by bringing writing assignments from any of your classes to a Peer Writing Tutor. Similar to Tutoring, you can visit the website to make an appointment, and to view the full schedule of available drop-in hours and locations.
+-  Success Consultations: In Success Consultations, SSC staff assist you in developing study skills, setting goals, and connecting to a variety of campus resources. Throughout the semester, I may communicate with the Student Success Center regarding your progress throughout the semester, which indicates your instructor is concerned about your progress in this course. If contacted by the Student Success Center, please schedule a Success Consultation right away. Referrals are not punitive, and any information shared by your professor is confidential and subject to FERPA. Student Success Center services are offered to all UofSC undergraduates at no additional cost. Please call 803-777-1000, visit [www.sc.edu/success](www.sc.edu/success), or come to the Student Success Center in the Thomas Cooper Library (Mezzanine Level) to check schedules and make appointments.
+
+SSC services are offered to all UofSC undergraduates at no additional cost. You are invited to call the Student Success Hotline at (803) 777-1000, [visit the SSC website](www.sc.edu/success), or stop by the SSC in the Thomas Cooper Library on the Mezzanine Level to check schedules and make appointments. 
+
+(@) Writing Center
+
+[Writing Center](http://artsandsciences.sc.edu/write/university-writing-center)
+This course has many of writing assignments. The University Writing Center is an important resource you should use! It's open to help any UofSC student needing assistance with a writing project at any stage of development. The main Writing Center is in Byrnes 703.
+
+(@) University Library Resources
+
+[University Libraries Resources](sc.edu/libraries)
+
+-  University Libraries has access to books, articles, subject specific resources, citation help, and more. If you are not sure where to start, please Ask a Librarian!  Assistance is available at [sc.edu/libraries/ask](sc.edu/libraries/ask).  
+-   Remember that if you use anything that is not your own writing or media (quotes from books, articles, interviews, websites, movies – everything) you must cite the source in MLA, APA, or Chicago citation styles (or other appropriate and approved) format.
+
+(@) Blackboard and Technology
+
+[Blackboard and Technology](https://sc.edu/about/offices_and_divisions/division_of_information_technology/end_user_services/available_technology_resources/)
+As a student in this course, you have access to support from the Division of Information Technology (DoIT) for Blackboard and computer issues. The service desk can be reached at 803-777-1800.
+
+(@) Counseling Services
+
+[Counseling Services](https://sc.edu/about/offices_and_divisions/student_health_services/medical-services/counseling-and-psychiatry/index.php): The University offers counseling and crisis services as well as outreach services, self-help, and frequently asked questions.
+
+(@) Mental Health
+
+If stress is impacting you or getting in the way of your ability to do your schoolwork, maintain relationships, eat, sleep, or enjoy yourself, please reach out to any of our mental health resources. Counseling & Psychiatry offers individual and group counseling and psychiatric services. You can schedule an appointment at (803) 777-5223 or on MyHealthSpace. You can also call after-hours for crisis counseling. Wellness Coaching can help you improve in areas related to emotional and physical wellbeing, such as sleep, resiliency, balanced eating and more. Wellness Coaching appointments can be made by calling 803-777-6518 or on MyHealthSpace. You can also access virtual self-help modules via [Therapy Assistance Online (TAO)](https://us.taoconnect.org/register). Most of these services are offered at no cost as they are covered by the University Health Services tuition fee. For all available mental health resources, check out [University Health Services Mental Health](https://sc.edu/about/offices_and_divisions/health_services/mental-health/index.php).
+
+(@) Interpersonal Violence
+
+Interpersonal violence - including sexual harassment, relationship violence, sexual assault, and stalking - is prohibited at UofSC. Faculty, staff, and administrators encourage anyone experiencing interpersonal violence to speak with someone, so they can get the necessary support and UofSC can respond appropriately. If you or someone you know has been or is currently impacted by interpersonal violence, you can find the appropriate resources at the [Stop Interpersonal Violence](http://www.sc.edu/stopsexualassault) website. 
+
+As faculty, I must report all incidents of interpersonal violence and sexual misconduct, and thus cannot guarantee confidentiality. Please know that you can [seek confidential resources](https://sc.edu/about/initiatives/safety/stop_sexual_assault/contacts/index.php). If you want to make a formal report, [you can report here](https://cm.maxient.com/reportingform.php?UnivofSouthCarolinaEOP&layout_id=6) or contact the institution’s Title IX Coordinator, or one of the Deputy Title IX Coordinators listed on the Stop Sexual Assault website. You can also file a police report by contacting USC Police at 803-777-4215. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

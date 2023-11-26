@@ -1,0 +1,508 @@
+---
+output: 
+  stevetemplates::syllabus:
+    latex_engine: xelatex
+    dev: cairo_pdf
+geometry: margin=1in
+
+title: "POLS 3220: Jurisprudence of Criminal Law"
+author: Professor Ian Adams
+date: "Summer 2022"
+
+email: "ian.adams@utah.edu"
+web: "ianadamsresearch.com"
+officehours: "flexible, with notice"
+office: "\\shrug"
+classroom: "Sandy Campus"
+classhours: "Thursday, 6-9p.m."
+
+fontfamily: mathpazo
+fontsize: 11pt
+header-includes:
+   - \linespread{1.05}
+---
+ <!-- CCCCCCCCnncdxxxxxxx -->
+<!-- Fun fact: my cat added this comment as she walked over the keyboard while I was working on this template. -->
+<!-- I'm going to keep it going forward. Long live Queen Bea. -->
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(cache=FALSE, dev='pdf')
+knitr::opts_chunk$set(cache=F,
+                      fig.path = 'figs/',
+                      cache.path='cache/',
+                      warning=F,
+                      message=F)
+
+knitr::opts_chunk$set(
+                  fig.process = function(x) {
+                      x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
+                      if (file.rename(x, x2)) x2 else x
+                      }
+                  )
+
+
+advdate <- function(obj, adv) {
+ tmon <- obj + 7*(adv-1)
+ tfri <- obj + 4 + 7*(adv-1)
+ tmon <- format(tmon, format="%m/%d")
+ tfri <- format(tfri, format="%m/%d")
+ zadv <- sprintf("%02d", adv)
+ tmp <- paste("Week ",zadv,sep='',", ", tmon," - ",tfri)
+ return(tmp)
+}
+
+options(scipen=999)
+library(tidyverse)
+library(stevemisc)
+#library(ggpmisc)
+#library(anonymizer)
+# library(ggcal)
+#library(stringr)
+#library(kfigr)
+#library(broom)
+library(lubridate)
+library(here)
+library(kableExtra)
+
+## for grading scheme
+
+grades <- read_csv(here("grading-scheme.csv"))
+
+## For discussion grading rubric
+rubric <- read_csv(here("POLS 3220 Criminal Jurisprudence", "discussion-rubric.csv"))
+
+
+# library(RefManageR)
+# library(knitcitations)
+# library(rcrossref)
+#bib <- ReadBib("~/Dropbox/master.bib")
+#myopts <- BibOptions(bib.style = "authoryear", style="latex", first.inits=FALSE, max.names = 20)
+
+# Create a calendar for your syllabus ----
+# Source: http://svmiller.com/blog/2020/08/a-ggplot-calendar-for-your-semester/
+
+# 1) what is the first Monday of the semester?
+# Any number of ways to identify dates in R, but we'll use {lubridate} and the ymd() function here.
+# Format: YYYYMMDD. In this example, 4 January 2021.
+
+mon <- ymd(20220516)
+
+# What are some dates you won't be here? In this example, I had a conference on 7 January 2021.
+# Spring Break was 15 March 2021 to 19 March 2021.
+# ymd(20211125), #for single day
+# 
+# seq(ymd(20211010),ymd(20211017), by=1)) #for sequence of days
+
+not_here_dates <- c(
+  # Thanksgiving week,
+  seq(ymd(20211122),ymd(20211128), by=1),
+  # ASC 2021
+  ymd(20211118),
+  # Fall Break
+  seq(ymd(20211010),ymd(20211017), by=1))
+
+# You can adjust this as you see fit. Basically: add assignment types (e.g. papers, quizzes).
+# My intro class was fairly simple: just exams.
+#exam_dates <- c(ymd(20210218), ymd(20210401), ymd(20210429))
+
+exam_dates <- seq(ymd(20220617), ymd(20220622), by=1)
+
+# What are the full dates of the semester? Here, I'll exclude exam week as I like to do.
+# In this case: 6 January to 23 April
+semester_dates <- seq(ymd(20220516), ymd(20220622), by=1)
+
+final_day <- mdy(06222022)
+
+# Custom function for treating the first day of the month as the first week 
+# of the month up until the first Sunday (unless Sunday was the start of the month)
+wom <- function(date) {
+    first <- wday(as.Date(paste(year(date),month(date),1,sep="-")))
+    return((mday(date)+(first-2)) %/% 7+1)
+  }
+
+# Create a data frame of dates, assign to Cal
+tibble(date = seq(ymd(20220501), ymd(20220630), by=1))  %>%
+  mutate(mon = lubridate::month(date, label=T, abbr=F), # get month label
+         wkdy = weekdays(date, abbreviate=T), # get weekday label
+         wkdy = fct_relevel(wkdy, "Sun", "Mon", "Tue", "Wed", "Thu","Fri","Sat"), # make sure Sunday comes first
+         semester = ifelse(date %in% semester_dates, 1, 0), # is date part of the semester?
+         exams = ifelse(date %in% exam_dates, 1, 0), # is it an exam?
+         not_here = ifelse(date %in% not_here_dates, 1, 0), # is it a day off?
+         day = lubridate::mday(date), # get day of month to add later as a label
+         # Below: our custom wom() function
+         week = wom(date)) -> Cal
+
+# Create a category variable, for filling.
+# I can probably make this a case_when(), but this will work.
+
+Cal %>%
+  mutate(category = NA,
+         category = ifelse(semester == 1, "Semester", category),
+         category = ifelse(semester == 1 & wkdy %in% "Thu", "Class Day", category),
+         category = ifelse(exams == 1, "Final Exam", category),
+         category = ifelse(is.na(category) | (semester == 1 & not_here == 1), "NA", category)) -> Cal 
+
+Cal %>% 
+  ggplot(.,aes(wkdy, week)) +
+  # custom theme stuff below
+  # theme_steve_web() + 
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank()) +
+  # geom_tile and facet_wrap will do all the heavy lifting
+  geom_tile(alpha=0.8, aes(fill=category), color="black", size=.45) +
+  facet_wrap(~mon, scales="free", ncol=3) +
+  # fill in tiles to make it look more "calendary" (sic)
+  geom_text(aes(label=day),family="Open Sans") +
+  # put your y-axis down, flip it, and reverse it
+  scale_y_reverse(breaks=NULL) +
+  # manually fill scale colors to something you like...
+  scale_fill_manual(values=c("Class Day"="steelblue", 
+                             "Semester"="lightsteelblue",
+                             "NA" = "white", # I like these whited out...
+                             "Final Exam"="indianred4"),
+                    #... but also suppress a label for a non-class semester day
+                    breaks=c("Class Day","Final Exam")) +
+  labs(fill = "", x="", y="",
+       caption = "Memorial Day (May 30)")  -> class_cal
+
+```
+
+```{r include = FALSE}
+
+## Just need to change up the 'firstday` for most semesters.
+
+library(tidyverse)
+library(lubridate)
+library(here)
+library(kableExtra)
+
+## for grading scheme
+
+grades <- read_csv(here("grading-scheme.csv"))
+
+## For discussion grading rubric
+rubric <- read_csv(here("POLS 3220 Criminal Jurisprudence", "discussion-rubric.csv"))
+
+
+firstday <- "2022-05-16"
+    
+meetings <- ymd(firstday) + c(0:6) * weeks(1)
+
+meeting_headers <- paste0("Week ", 1:6, ", ", months(meetings), " ", day(meetings))
+
+```
+
+# Course Description
+
+> "One of the beautiful things about science is that it allows us to bumble along, getting it wrong time after time, and feel perfectly fine as long as we learn something each time."
+
+> Martin A. Schwartz (2008), ["The Importance of Stupidity in Scientific Research"](https://ir.stonybrook.edu/xmlui/bitstream/handle/11401/8083/schwartzimportanceofstupidityinscience.pdf?sequence=1)
+
+Criminal law is a constant source of fascination. In addition to its prominent place on television networks’ schedules, criminal law governs the use of the most important form of governmental power: the power of government to incarcerate - and even execute. All forms of law govern human behavior, but criminal law governs the most basic questions of how we treat one another and defines those forms of human action which society will not tolerate. Criminal law also presents a number of questions central to political institutions, including the Executive and Judicial Branches, and the Bureaucracy.  This class is also intended as much as an examination these institutions and how they function within the context of criminal justice.  This class will not teach you the skills needed to serve as a criminal defense attorney (least of all, for yourself), but will engage you in a critical and engaged examination of our duties to others and the state’s role in regulating individuals’ actions.     
+
+# Course Objectives
+
+By the end of this course, students will be able to:
+
+-  Identify the purpose, principles, and sources of US criminal law.
+-  Distinguish between the major institutions of criminal law, and their role.
+-  Describe the “legal equation” of major crimes, i.e., the underlying elements.
+-  Understand your role in the criminal justice system.
+-  Critically assess criminal incidents.
+-  Effectively communicate regarding criminal justice incidents and concepts.
+
+
+# Office Hours
+
+What are [office hours](https://vimeo.com/270014784) anyway? I take a very liberal view of the word "office" and "hours." Most days, I'm literally sitting at a computer at home (or in a coffee shop on better days), webcam at the ready, and am happy to jump into a quick conversation with any student. Depending on need and availability, we can meet individually, speak by phone, or as a group with students via a video call. If you want to make any type of appointment, please send me an email with a list of times you are available to meet.  You can either use the built-in Canvas messaging system, or email directly at ian.adams@utah.edu.
+
+# Required Materials
+
+Lippman, M. (2019). Essential Criminal Law, 3rd Edition. SAGE Publications, Incorporated. 
+
+The Lippman text above is required for a student to be successful in this course. If a student wants to use another edition of the textbook, that's fine, however be aware that some information may hvae changed, and you are responsible for having correct information on exams, quizzes, and essays. 
+
+The publisher has made an electronic version of the book available (see **Inclusive Access** program below) through multiple platforms, and if that is good for you, please feel free to use it. If you have difficulty obtaining the textbook for any reason, please reach out to me as soon as possible. There may also be additional readings as distributed through Canvas. 
+
+## Inclusive Access (textbook)
+
+This course uses the [Inclusive Access Program](https://www.campusstore.utah.edu/utah/InclusiveAccess), which is a new program from the University Bookstore. This means that when you register for the class, you are automatically registered for access to the electronic version of the textbook. The Bookstore will email you with instructions on how to access your textbook. You can choose to [OPT OUT](https://portal.verba.io/utah/login) of the program, so that you are not charged, if you choose to access the textbook in another format. **Pay close attention to the Bookstore email, because you must opt-out by a certain date, or else you will be charged for the textbook.**
+
+## Required Podcast
+
+Listening to, considering, and responding to the issues posed in the *Serial* podcast are central tasks for this course. Feel free to use your preferred podcast platform. If you are having difficulty finding and listening to the podcast, please contact me immediately. Here are three examples of where to find the *Serial*, Season Three podcast episodes.
+
+-  Podcast homepage: [Serial Podcast, Season 3](https://serialpodcast.org/season-three/1/a-bar-fight-walks-into-the-justice-center) 
+-  Apple Podcasts: [Serial Podcast on Apple](https://podcasts.apple.com/us/podcast/serial/id917918570)
+-  Stitcher Podcasts: [Serial Podcast on Stitcher](https://www.stitcher.com/podcast/this-american-life/serial)
+-  Google Podcasts: [Stitcher Podcast on Google](https://podcasts.google.com/?feed=aHR0cDovL2ZlZWRzLnNlcmlhbHBvZGNhc3Qub3JnL3NlcmlhbHBvZGNhc3Q%3D)
+
+# General Assignment Information
+
+This class will require you to complete significant work. As an overview, you will be required to attend and participate in our class meetings; take quizzes; read assigned chapters from the textbook; listen to a podcast, and respond with a high-quality posting regarding that podcast episode(s); complete one essay; and there is a final exam. The bottom of this syllabus has more detailed information on assignment types and expectations.
+
+
+## Finals Information
+
+In this class you will have both a final exam, and a final essay. These are each worth substantial points and will heavily influence your final grade. The final exam will be taken in Canvas (like your weekly quizzes), and is a mix of short answers and multiple choice questions of varying difficulty. Your final essay will be assigned close to the mid-term break. I intentionally do not disclose details of the essay earlier than that, as I have several options and want to see what works best for the students, their interests, and growth as social scientists. As I'll say multiple times in this syllabus (and probably through the semester): **There will be absolutely no class work of any kind accepted after 11:59 p.m. on `r format(final_day, '%B %d, %Y')`**.
+
+# Contacting the Instructor
+
+Normally, the fastest way to contact me is through the email above. I actively check and respond to emails throughout the day. I will always try to respond to your email within 72 business hours (i.e., Monday through Friday). If you have a more urgent request, please note that within the subject line of your email.
+
+Communications coming from me will be sent using the Canvas message feature. Be sure to set your Canvas settings such that you are notified when course messages are sent. All communications between students and instructors are to be respectful in content and professional in tone. Nonprofessional communications will be responded to with a request to rewrite/rephrase according to these communication expectations. In the case of emails and Canvas messages, this means:
+
+-  Using salutations (e.g., “Hello…”), closing statements (e.g., “Thank you for your attention to…”), and closings (e.g., “Best regards”). 
+-  Stating the purpose of the email and including background information to enable the instructor to understand and respond to the email.
+-  Using complete sentences and refraining from using profanity.
+
+# Canvas Information
+
+This is an blended in-person course, and the course Canvas site is a virtual classroom and super syllabus all-in-one. There are several ways to address any technical difficulties experienced in Canvas, listed below. These are also linked to from the course Canvas site’s Help page. Please consult these aids before contacting me about technical difficulties, as I won't be able to help in the vast majority of cases.
+
+- University of Utah [Canvas Orientation resources](https://utahtacc.zendesk.com/hc/en-us/articles/205654094)
+- Online [Canvas Guides](https://community.canvaslms.com/community/answers/guides/)
+- University of Utah IT Help Desk: 801-581-4000
+
+# Class Schedule and Meetings
+
+Students must read all assigned material prior to our class session.  Important: class readings are subject to change, contingent on mitigating circumstances and the progress we make as a class.  Students are encouraged to attend lectures and check the course Canvas website for updates. 
+
+**This is a blended course, meaning some lectures will be held in person, and some will be held via Zoom.** Please make sure your Zoom is working, as I am not going to be able to troubleshoot technology problems. 
+
+Here is an overview calendar for the course. The semester is in light blue, meeting days are highlighted in darker blue. Final exam week is highlighted in red. If a date is white, that means no class due to breaks. 
+
+```{r calendar, echo=F, eval=T, fig.cap="Calendar for PoLS 3220: Jurisprudence of Criminal Law, Fall 2021",  warning=F, fig.width=11, fig.height=7}
+
+class_cal
+
+```
+
+
+# Weekly Schedule
+
+This course is arranged into 'modules' for each week. Please see the Canvas course for details and links for each week's activities. Note that the dates below mark the *start of the week,* not the date of our class meetings, which are Thursdays, 6-9pm.
+
+##  `r meeting_headers[1]` : 
+
+**Topics:** Class Introduction; Nature, Purpose, and Function of Criminal Law; Constitutional Limitations; Elements of Crime
+
+**Readings:** Syllabus, Code of Conduct, Chapters 1,2,3
+
+
+##  `r meeting_headers[2]` : 
+
+**Topics:** Parties to Crimes; Attempt, Solicitation, & Conspiracy; Defenses to Crimes
+
+**Readings:** Chapters 4,5,6
+
+##  `r meeting_headers[3]` :
+
+**Topics:** Homicide; Other Crimes Against the Person
+
+**Readings:** Chapters 7,8
+
+
+##  `r meeting_headers[4]` : 
+
+**Topics:** Crimes Against Property; Crimes Against Public Order & Morality
+
+**Readings:** Chapters 9, 11
+
+##  `r meeting_headers[5]` :
+
+**Topics:** Alcohol & Drug Offenses; Public Administration of Justice Offenses
+
+**Readings:** Chapter 12, 13
+
+
+##  `r meeting_headers[6]` :
+
+**FINALS WEEK** Your final essay and your final exam are both due **no later than 11:59 p.m. on `r format(final_day, '%B %d, %Y')`** There will absolutely be no assignments, essays, quizzes, or exams accepted after that date and time. None. Add it to your calendar now. Failure to submit any assignment, essay, quiz, or exam by that date and time will automatically be counted as a zero towards your final grade. I will accept no appeals on this, so please plan ahead.
+
+**Final Essay:** Final Essay will be assigned in class around mid-semester, and is due by 11:59 p.m. on **`r format(final_day, '%B %d, %Y')`** This means you have nearly the entire course length to complete the essay.
+
+**Final Exam:** Final Exam is first available following our final class meeting, and is due by 11:59 p.m. on **`r format(final_day, '%B %d, %Y')`**. This means you have approximately one week in which to complete the exam.
+
+
+# Course Policies
+
+I will detail the policy for this course below. Academic honesty is expected, and dishonesty will not be tolerated. The University policy on academic dishonesty can be found on the university website. An act of academic dishonesty will result in a course grade of E and a recommendation of additional disciplinary action. The faculty has adopted the following guidelines concerning what constitutes a violation of ethical standards for work completed in this course. Any of these violations will be considered academic dishonesty and treated as such. These guidelines are in addition to any University-wide guidelines concerning academic dishonesty, which may be in effect. All course assignments will be scanned through Turnitin, and any misconduct will result in a failing grade for the course. 
+
+1.	__Cheating__: the giving or receiving of any unauthorized assistance on any academic work;
+2.	__Plagiarism__: presenting the language, structures or ideas of another person or persons as one’s own academic work;
+3.	__Falsification__: Any untrue statement, either oral or written, concerning one’s own academic work or the academic work of another student, or the unauthorized alteration of any academic record; and
+4.	__Original work__: Unless specifically allowed by the instructor, all academic work undertaken in a course must be original (i.e., it must not have been submitted in a prior course or be submitted in a course being taken concurrently).
+
+## Respectful & Appropriate Class Conduct
+
+Public policy processes, including the criminal justice system, inherently center on topics and issues for which individuals hold strong opinions, based on their personal values, beliefs, and interests. As a result, this course will challenge students to not only acknowledge and respect perspectives that differ from their own, but may call on them to challenge their own opinions and beliefs, and “step into” another’s perspective to consider the strengths and limitations of their own argument. 
+
+In order to facilitate this process and ensure a socially, emotionally, and psychologically safe environment, **respectful behavior is the expectation, norm, and requirement in this class.** Arguments and ideas may (and are expected to) be challenged, but personal attacks, disrespectful behavior, and/or hateful attitudes towards people or any groups of people will not be tolerated.
+
+## Course Work
+
+This class will require you to complete significant work outside of class. As an overview, you will be required to attend and participate in class meetings; take quizzes; read assigned chapters from the textbook; listen to a podcast, and respond with a high-quality posting regarding that podcast episode(s); complete one essay; and there is a final exam.
+
+### Weekly Quizzes
+
+Each week you are required to answer a short quiz. The questions in every quiz are drawn directly from that week’s textbook readings. The questions are also very similar to the questions you will encounter in the final exam! There are ten to fifteen questions per quiz. If you are keeping up on your reading, they should not pose too much difficulty. The questions are randomly drawn from a large pool of questions, so each student will be presented with a different quiz. 
+
+### Discussion Postings
+
+Every week, I will post question on several discussion threads. One of these postings relate to episodes in a podcast: “Serial: Season 3,” which describes the criminal justice system in Cleveland, Ohio. The other posting will have discussions regarding a criminal justice issue in the news. 
+
+During the week, you will be required to make at least two postings on each discussion: (1) an initial posting in response to my question; and (2) a posting in response to the posting of another student. Each of these postings must be made prior to the due date for the discussion posting assignment. 
+
+(a)	Do not wait until the last day to make your postings. This requirement will ensure that you have plenty of response options over the weekend when it comes to posting a response. *Post early, post often*.
+
+(b)	When you post something on the discussion board, you should try to use class material, current events, and inject your personal opinion backed by evidence. A high-quality mandatory posting will be at least two paragraphs in length (but need not necessarily be more than two paragraphs) and will contain a cogent argument which responds directly to the question asked and does not contain spelling or grammatical errors. A high-quality posting in response to another students posting may be slightly shorter in length than the initial posting (but should be at least one full paragraph in length, or 4-5 sentences) and should still contain a cogent argument and correct spelling and grammar.
+
+(c)	Each of the posting assignments is worth up to 6 points – in other words, you could receive less than 6 points if your posting does not conform to the course criteria (see Table 1: Discussion Grading Rubric in this syllabus). 
+
+(d)	Although I want to use this portion of the class to foster a healthy and vigorous debate between students, I reserve the right to delete any posting I choose. I will delete a posting if it is unreasonably derogatory towards another student or violates university policy. Otherwise, the posting board will be fair game. If I delete your posting, you will not receive credit for it. In short, do not refrain from engaging each other, but please make every effort to be respectful.
+
+
+```{r remedy002, echo=FALSE}
+
+kbl(rubric,
+    format = "latex",
+    booktabs = TRUE,
+    caption = "Discussion Grading Rubric") #%>%
+  #kable_styling(latex_options = "scale_down")
+
+```
+
+### Late Policy
+
+All assignments submitted after the due date are subject to a **ten percent deduction**. An additional ten percent is deducted for each additional 24 hours the assignment is late. Please note the specific due dates for all assignments – which are always due prior to the start of class. **No deadlines past `r format(final_day, '%B %d, %Y')` will be considered or accepted**. Missing submissions will be awarded zero points automatically. Perhaps the the most important point -- contact me beforehand if you are experiencing difficulties that will impact your ability to turn in work! Reaching out after the due date has passed is not helpful to you or me.
+
+## Grading Scheme 
+
+The course grading scheme is as follows. When a course grade falls between integers, I apply a standard rounding procedure: any point total that ends in .0 to .49 will be rounded down to the nearest whole number, while any point total that ends in .50 to .99 will be rounded up. Note that this is done automatically by Canvas. I do not grade on a curve, and would be delighted to be able to give every student an A. However, it is up to you to be consistent, motivated, and engaged. 
+
+```{r remedy003, echo=FALSE}
+
+kbl(grades, "latex")
+
+```
+
+## Grading and Points Distribution
+
+This class has *approximately* 358 points available through quizzes, assignments, and projects:
+
+- Weekly quizzes - 55 points
+- Discussion postings - 78 points
+- Final Essay - 100 points
+- Final Quiz - 125 points
+
+That means: 
+
+- About **15%** of your grade will be determined by short quizzes.
+- About **21%** of your grade will be determined discussion posts.
+- About **28%** of your grade will be determined by your final essay.
+- About **35%** of your grade will be determined by your final exam.
+
+Please keep in mind that these are approximations, and throughout the course I may modify the course and assignments as needed. I will communicate any such changes through the Canvas course announcements.
+
+I do not offer make-up or extra-credit in this course. If you are disciplined and complete the work each week, do all the required readings, and attend class meetings (in person or Zoom), you will do well. If you do not do those things, your grade is very likely to be disappointing.
+
+### Contested Grades
+
+If you would like your discussion or quiz regraded, please email me in advance of our meeting. In this email, please state clearly what the issue is and the reasons that you feel justify an adjustment to your grade. Once I receive your email, we will schedule an in-person meeting to discuss your request. Please be aware, if I agree to regrade, the entire assignment will be evaluated again. This means that your grade can be lowered as well as raised. The new grade will be final. 
+
+If you just have questions on a quiz question, there is no need to request a full regrade. Simply email me and we will discuss. Note that no regrading will be done for the final exam and essay, as the semester will have ended.
+
+## Attendance Policy
+
+```{r, include=FALSE}
+# I like to put in a cautionary tale about the importance of attending classes. This will approximate the underlying data.
+# Data are clearly fake, though.
+
+tibble(perattend = rbnorm(800, 81.84, 22.74, 0, 100),
+       grade = 10.19 + .78*perattend + rnorm(800, 0, 20),
+       rgrade = case_when(
+         grade < 0 ~ 0,
+         grade > 100 ~ 100,
+         TRUE ~ grade
+       )) -> Attend
+
+options(scipen=999)
+M1 <- lm(rgrade ~ perattend, Attend)
+M2 <- lm(rgrade ~ perattend, data=subset(Attend, perattend >= 75))
+
+M1df <- broom::tidy(M1)
+M2df <- broom::tidy(M2)
+#library(ggplot2)
+#library(kfigr)
+```
+
+Attendance is mandatory for our weekly class meetings. We all have busy lives, so being late is not a problem (though not preferred), and I’d rather you miss one hour than three. Students are expected to fully engage in the discussion in each class. *The purpose of the class is for everyone to discuss the readings, not to have them explained.* I will not take formal attendance if the class is small; however, in larger classes, attendance may be marked. In either case, failure to regularly attend and participate in class discussion will negatively affect your grade. Consider the following, courtesy [Steven Miller](https://github.com/svmiller).
+
+A simple linear regression of a student's final grade on percentage of classes attended for the semester suggests an increase of one percent in attendance for the semester leads to an estimated increase of `r round(M1$coefficients[2], 3)` in the student's final grade. Whereas one missed classes constitutes about a five-percent decrease in percentage attendance for the semester, one missed class means an estimated decrease of `r round(M1$coefficients[2], 3)*5` in the overall grade. The effect of attendance on the final grade for the class is precise (*t* = `r round(M1df$statistic[2], 3)`) and the likelihood that there is no actual relationship between attendance and final grade for the semester is almost zero. This simple linear model with just one predictor (attendance) provides a good fit as well (R$^2$ = `r round(summary(M1)$r.squared, 3)`). See Figure 2 in this document.
+
+```{r attendplot, echo = FALSE, results="asis", cache=FALSE, fig.cap="A Scatterplot of the Relationship between Class Attendance and Final Grade", fig.height=4, fig.pos="H"}
+Graph <- ggplot(Attend, aes(x = perattend, y = rgrade))
+Graph + geom_point() + labs(x="Percent Attendance in Class", y="Final Grade in Class (0-100)") + 
+                              geom_smooth(method=lm)
+```
+
+The findings hold even when I subset the data to cases where attendance is greater than 75% (i.e. roughly the threshold below which I deduct all participation points). Students who just meet the threshold for full participation points nevertheless get an estimated decrease of `r round(M2$coefficients[2], 3)*5` in their overall grade for each missed class. This effect is also precise (*t* = `r round(M2df$statistic[2], 3)`). Put another way, we would have observed this effect in my data if there were no *true* effect of attendance on grades about `r round(summary(M2)$coefficients[2,4]*100000)` times in 100,000 "trials" (i.e. *p* = `r round(summary(M2)$coefficients[2,4], 5)`), on average. That probability is effectively zero. *Attend class*.
+
+## Instructor Expectations
+
+I commit to being your mentor and facilitator of the classroom experience, and to the following expectations for this course:
+
+- I will design the course to include lectures, readings materials, and assignments that will challenge students and will provide them with opportunities to learn and practice course content.
+- Though this course has online components (quizzes, discussions, etc.), it is not a class that is run “automatically” by technology. I interact with the class via announcements, virtual office hours, emails/the Canvas Inbox, feedback on assignments, discussion and lecture in class, and comments on lecture bulletin boards, among other methods.
+- I will respond to emails in a timely fashion. “Timely” in this instance means within 24-72 hours, not including weekends and holidays. *Normally*, I am quite a bit faster, but like everyone else, life sometimes intervenes. If you do not hear from me within 72 hours, please email again.
+- I will be available for individual consultation via virtual office hours, email, or phone. Students will not be required to come to campus in order to meet with me, nor does it have to be during 'bankers hours.'
+- I will provide feedback on assignments in a timely manner.
+- I will ensure and enforce a respectful atmosphere.
+- I will maintain a classroom that is open to questions, discussion, and ethical disagreement.
+- I will follow all [official University of Utah policies](https://registrar.utah.edu/handbook/) regarding conduct in the classroom, incompletes, and accommodations. Accommodations will be considered on an individual basis and only with required documentation. See the **University Policies** section at the end of this syllabus for more information and resources.
+
+## Student Expectations
+
+Though there is some built in flexibility, in that you are able to complete quizzes within a module rather than a specific date, can turn in the final essay before finals week, and have about a week in which to complete the final exam, this course does have a structure and timeline, including due dates for course assignments. As such, the following is expected of all students in this class:
+
+- Students will log in to the course each week.
+- Students will attend class meetings each week.
+- Students may be expected to work with classmates; however, students are not expected to necessarily interact with their classmates in person. A good alternative to meeting in person would be online video conferencing, which allows students to find a time to meet that works best for their schedule. Depending on the assignment, students can also choose to interact with their classmates with whatever technology they are most comfortable with.
+- To do well, students must be self-motivated, organized, and willing to stay on top of their schedule. Students should take control of their learning while in this course.
+- Students will regularly check course announcements. The *Announcements* area is the instructor’s official means of communication when distributing information to the entire class.
+- Students will [update their Canvas settings](https://support.tlt.utah.edu/hc/en-us) to ensure they receive timely notifications from the course.
+- If students have any questions, are struggling with course materials, or need further assistance from their instructor, they will take the initiative to contact their instructor via the Inbox feature in Canvas or via email. Email is not perfect; sometimes, messages sent to instructors are lost before they are read. If you do not hear back from your instructor within 72 hours after sending a message, please contact me again.
+- Students will engage with the course, students, and the instructor in a respectful and professional manner at all times.
+
+# University Policies
+
+It is my intent that students from all diverse backgrounds and perspectives be well served by this course, that students’ learning needs be addressed both in and out of class, and that the diversity that students bring to this class be viewed as a resource, strength, and benefit. It is my intent to present materials and activities that are respectful of diversity: gender, sexuality, disability, age, socioeconomic status, ethnicity, race, and culture. Your suggestions are encouraged and appreciated. Please let me know ways to improve the effectiveness of the course for you personally or for other students or student groups. In addition, if any of our class meetings conflict with your religious events, please let me know so that we can make arrangements for you. The following resources and statements are drawn directly from the University of Utah guidelines. If you have questions or concerns not answered below, please contact me directly so we can work together to answer and address them.
+
+1.	*Accommodation of Sincerely Held Beliefs*:  I will work with students who require schedule changes due to religious or other significant obligations. I will not consider any requests based on course content. No other area of study touches on more sensitive topics than the broad category of "public policy" (and at times disturbing forms of human misbehavior such as criminal law). Policy researchers must read about, talk about, and listen to information relating to very difficult subjects. Sometimes case descriptions can be quite graphic. Students are required to attend all classes and to read all the assignments. All assignments and lectures are related to our subject matter.
+
+2.	*The Americans with Disabilities Act*. The University of Utah seeks to provide equal access to its programs, services, and activities for people with disabilities. If you will need accommodations in this class, reasonable prior notice needs to be given to the [Center for Disability Services](https://disability.utah.edu/), 162 Olpin Union Building, (801) 581-5020. CDS will work with you and the instructor to make arrangements for accommodations. All written information in this course can be made available in an alternative format with prior notification to the Center for Disability Services.
+
+3.	*University Safety Statement*. The University of Utah values the safety of all campus community members. To report suspicious activity, call campus police at 801-585-COPS (801-585-2677). You will receive important emergency alerts and safety messages regarding campus safety via text message. For more information regarding safety and to view available training resources, including helpful videos, visit safeu.utah.edu. 
+
+4.	*Addressing Sexual Misconduct*. Title IX makes it clear that violence and harassment based on sex and gender (which Includes sexual orientation and gender identity/expression) is a civil rights offense subject to the same kinds of accountability and the same kinds of support applied to offenses against other protected categories such as race, national origin, color, religion, age, status as a person with a disability, veteran’s status or genetic information.  If you or someone you know has been harassed or assaulted, you are encouraged to report it to the Title IX Coordinator in the Office of Equal Opportunity and Affirmative Action, 135 Park Building, 801-581-8365, or the Office of the Dean of Students, 270 Union Building, 801-581-7066.  For support and confidential consultation, contact the Center for Student Wellness, 426 SSB, 801-581-7776.  To report to the police, contact the Department of Public Safety, 801-585-2677(COPS).
+
+5.	*Undocumented Student Support Statement*. Immigration is a complex phenomenon with broad impact—those who are directly affected by it, as well as those who are indirectly affected by their relationships with family members, friends, and loved ones. If your immigration status presents obstacles to engaging in specific activities or fulfilling specific course criteria, confidential arrangements may be requested from the Dream Center. Arrangements with the Dream Center will not jeopardize your student status, your financial aid, or any other part of your residence. The Dream Center offers a wide range of resources to support undocumented students (with and without DACA) as well as students from mixed-status families. To learn more, please contact the Dream Center at 801.213.3697.
+
+6.	*Veterans’ Center*. If you are a student veteran, the U of Utah has a Veterans Support Center located in Room 161 in the Olpin Union Building. Hours: M-F 8-5 pm. Please visit their website for more information about what support they offer, a list of ongoing events, and links to outside resources: [Veteran's Center](http://veteranscenter.utah.edu/). Please also let me know if you need any additional support in this class for any reason.
+
+7.	*Wellness Statement*. Personal concerns such as stress, anxiety, relationship difficulties, depression, cross-cultural differences, etc., can interfere with a student’s ability to succeed and thrive at the University of Utah. For helpful resources, contact the Center for Student Wellness or call at 801-581-7776.
+
+8.	*English Language Learners*. If you are an English language learner, please be aware of several resources on campus that will support you with your language and writing development. These resources include the [Writing Center](http://writingcenter.utah.edu/) and the [English Language Institute](http://continue.utah.edu/eli/). Please let me know if there is any additional support you would like to discuss for this class.
+
+9.	*LGBT Resources*: I am committed to inclusivity and respect for all students in the classroom, including and not limited to LGBT individuals. Additionally, the University of Utah has an LGBT Resource Center located in the Olpin Union Building, Room 409. Their website contains more information about the support they offer, a list of events, and links to additional resources: LGBT Resources.
+
+10.	*Names/Pronouns*. Class rosters are provided to the instructor with the student’s legal name as well as “Preferred first name” (if previously entered by you in the Student Profile section of your CIS account). While CIS refers to this as merely a preference, I will honor you by referring to you with the name and pronoun that feels best for you in class or on assignments. Please advise me of any name or pronoun changes so I can help create a learning environment in which you, your name, and your pronoun are respected. If you need any assistance or support, please reach out to the LGBT Resource Center: [LGBT Resources](http://lgbt.utah.edu/).
+
+11.	*Drop/Withdrawal*.  Please check the academic calendar for more information pertaining to dropping and withdrawing from a course. Withdrawing from a course, and other matters of registration, are the student’s responsibility. 
+
+12.	 *Student Code*: http://regulations.utah.edu/academics/6-400.php
+
+13.	 *Accommodation Policy (see Section Q)*: http://regulations.utah.edu/academics/6-100.php
+
+
+

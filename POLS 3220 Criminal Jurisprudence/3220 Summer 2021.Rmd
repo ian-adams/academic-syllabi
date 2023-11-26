@@ -1,0 +1,272 @@
+---
+output: 
+  pdf_document:
+    keep_tex: false
+    fig_caption: yes
+    latex_engine: pdflatex
+    template: svm-latex-syllabus.tex
+geometry: margin=1in
+
+title: "POLS 3220: Introduction to Criminal Jurisprudence"
+author: Ian T. Adams
+date: "Summer 2021"
+
+email: "ian.adams@utah.edu"
+web: "ianadamsresearch.com"
+officehours: "online, anytime with notice"
+office: "Zoom Hall"
+classroom: "*online*"
+classhours: "Thursdays, 6 to 9 p.m."
+
+fontfamily: mathpazo
+fontsize: 11pt
+header-includes:
+   - \linespread{1.05}
+---
+
+```{r include = FALSE}
+
+## Just need to change up the 'firstday` for most semesters.
+
+library(tidyverse)
+library(lubridate)
+
+firstday <- "2021-06-28"
+    
+meetings <- ymd(firstday) + c(0:15) * weeks(1)
+
+meeting_headers <- paste0("Week ", 1:6, ", ", months(meetings), " ", day(meetings))
+
+```
+
+# Course Description
+
+> "One of the beautiful things about science is that it allows us to bumble along, getting it wrong time after time, and feel perfectly fine as long as we learn something each time."
+
+> Martin A. Schwartz (2008), ["The Importance of Stupidity in Scientific Research"](https://ir.stonybrook.edu/xmlui/bitstream/handle/11401/8083/schwartzimportanceofstupidityinscience.pdf?sequence=1)
+
+Criminal law is a constant source of fascination. In addition to its prominent place on television networks’ schedules, criminal law governs the use of the most important form of governmental power: the power of government to incarcerate - and even execute. All forms of law govern human behavior, but criminal law governs the most basic questions of how we treat one another and defines those forms of human action which society will not tolerate. Criminal law also presents a number of questions central to political institutions, including the Executive and Judicial Branches, and the Bureaucracy.  This class is also intended as much as an examination these institutions and how they function within the context of criminal justice.  This class will not teach you the skills needed to serve as a criminal defense attorney (least of all, for yourself), but will engage you in a critical and engaged examination of our duties to others and the state’s role in regulating individuals’ actions.     
+
+# Course Objectives
+
+By the end of this course, students will be able to:
+
+-  Identify the purpose, principles, and sources of US criminal law.
+-  Distinguish between the major institutions of criminal law, and their role.
+-  Describe the “legal equation” of major crimes, or the underlying elements.
+-  Understand your role in the criminal justice system.
+-  Critically assess criminal incidents.
+-  Effectively communicate regarding criminal justice incidents and concepts.
+
+
+# Office Hours
+
+What are [office hours in an online class](https://vimeo.com/270014784)? I take a very liberal view of the word "office" and "hours." Most days, I'm literally sitting at a computer at home (or in a coffee shop on better days), webcam at the ready, and am happy to jump into a quick conversation with any student, at any time. We can meet individually, speak by phone, or as a group with students via a video call. If you want to make any type of appointment, please send me an email with a list of times you are available to meet.  You can either use the built-in Canvas messaging system, or email directly at ian.adams@utah.edu.
+
+# Required Readings
+
+Lippman, M. (2019). Essential Criminal Law, 3rd Edition. SAGE Publications, Incorporated. 
+
+The Lippman text above is required for a student to be successful in this course. If a student wants to use another edition of the textbook, that's fine, however be aware that some information may hvae changed, and you are responsible for having correct information on exams, quizzes, and essays. 
+
+The publisher has made an electronic version of the book available through multiple platforms, and if that is good for you, please feel free to use it. If you have difficulty obtaining the textbook for any reason, please reach out to me as soon as possible. There may also be additional readings as distributed through Canvas. 
+
+## Inclusive Access (textbook)
+
+This course uses the [Inclusive Access Program](https://www.campusstore.utah.edu/utah/InclusiveAccess), which is a new program from the University Bookstore. This means that when you register for the class, you are automatically registered for access to the electronic version of the textbook. The Bookstore will email you with instructions on how to access your textbook. You can choose to [OPT OUT](https://portal.verba.io/utah/login) of the program, so that you are not charged, if you choose to access the textbook in another format. **Pay close attention to the Bookstore email, because you must opt-out by a certain date, or else you will be charged for the textbook.**
+
+## Required Podcast
+
+Listening to, considering, and responding to the issues posed in the *Serial* podcast are central tasks for this course. Feel free to use your preferred podcast platform. If you are having difficulty finding and listening to the podcast, please contact me immediately. Here are three examples of where to find the *Serial*, Season Three podcast episodes.
+
+-  Podcast homepage: [Serial Podcast, Season 3](https://serialpodcast.org/season-three/1/a-bar-fight-walks-into-the-justice-center) 
+-  Apple Podcasts: [Serial Podcast on Apple](https://podcasts.apple.com/us/podcast/serial/id917918570)
+-  Stitcher Podcasts: [Serial Podcast on Stitcher](https://www.stitcher.com/podcast/this-american-life/serial)
+-  Google Podcasts: [Stitcher Podcast on Google](https://podcasts.google.com/?feed=aHR0cDovL2ZlZWRzLnNlcmlhbHBvZGNhc3Qub3JnL3NlcmlhbHBvZGNhc3Q%3D)
+
+# Contacting the Instructor
+
+Normally, the fastest way to contact me is through the email above. I actively check and respond to emails throughout the day. I will always try to respond to your email within 72 business hours (i.e., Monday through Friday). If you have a more urgent request, please note that within the subject line of your email.
+
+Communications coming from me will be sent using the Canvas message feature. Be sure to set your Canvas settings such that you are notified when course messages are sent. All communications between students and instructors are to be respectful in content and professional in tone. Nonprofessional communications will be responded to with a request to rewrite/rephrase according to these communication expectations. In the case of emails and Canvas messages, this means:
+
+-  Using salutations (e.g., “Hello…”), closing statements (e.g., “Thank you for your attention to…”), and closings (e.g., “Best regards”).
+-  Referencing individuals using their appropriate titles, (e.g., Mr., Ms., Dr., or Professor).
+-  Ensuring proper spelling and grammar are used throughout the communication.
+-  Stating the purpose of the email and including background information to enable the instructor to understand and respond to the email.
+-  Using complete sentences and refraining from using profanity.
+-  Phrase requests as **requests, not demands**. Remember to remain professional at all times.
+
+These are general recommendations that you should attend to throughout your communications in any academic or professional context!
+
+# Canvas Information
+
+As this an online course, the course Canvas site is a virtual classroom and super syllabus all-in-one. There are several aids for addressing any technical difficulties experienced in Canvas, listed below. These are also linked to from the course Canvas site’s Help page. Please consult these aids before contacting me about technical difficulties, as I won't be able to help in the vast majority of cases.
+
+- University of Utah [Canvas Orientation resources](https://utahtacc.zendesk.com/hc/en-us/articles/205654094)
+- Online [Canvas Guides](https://community.canvaslms.com/community/answers/guides/)
+- University of Utah IT Help Desk: 801-581-4000
+
+
+# Weekly Schedule
+
+This course is arranged into 'modules' for each week. Please see the Canvas course for details on each week.
+
+##  `r meeting_headers[1]` : 
+
+**Topics:** Nature of Criminal Law; Constitutional Limitations; Elements of Crime
+
+**Readings:** Syllabus, Code of Conduct, Chapters 1, 2, & 3
+
+**Zoom Meeting:** July 1, 6-9 p.m. Details and link in Canvas.
+
+##  `r meeting_headers[2]` : 
+
+**Topics:** Parties to Crime; Defenses to Crime
+
+**Readings:** Chapters 4, 5, & 6
+
+##  `r meeting_headers[3]` :
+
+**Topics:** Homicide; Crimes Against Persons
+
+**Readings:** Chapters 7 & 8
+
+**Final Essay:** The final essay topic will be assigned during the Zoom meeting.
+
+**Zoom Meeting:** July 15, 6-9 p.m. Details and link in Canvas.
+
+##  `r meeting_headers[4]` : 
+
+**Topics:** Property Crimes; Public Order & Morality Crimes
+
+**Readings:** Chapters 9, 10, & 11
+
+##  `r meeting_headers[5]` :
+
+**Topics:** Alcohol & Drug Offenses; Crimes Against Administration of Justice
+
+**Readings:** Chapter 12 & 13
+
+**Discuss:** Final Essay and Quiz questions from students
+
+**Zoom Meeting:** July 29, 6-9 p.m. Details and link in Canvas.
+
+##  `r meeting_headers[6]` :
+
+**Topics:** Final Essay & Exam 
+
+**Readings:** No assigned textbook readings - work on final paper!
+
+**Final Essay:** Submit Final Essay is due by 11:59 p.m. on **August 4, 2021 (Wednesday!)**
+
+**Final Exam:** Final Exam is due by 11:59 p.m. on **August 4, 2021 (Wednesday!)**
+
+
+# Course Policies
+
+I will detail the policy for this course below. Academic honesty is expected, and dishonesty will not be tolerated. The University policy on academic dishonesty can be found on the university website. An act of academic dishonesty will result in a course grade of E and a recommendation of additional disciplinary action. The faculty has adopted the following guidelines concerning what constitutes a violation of ethical standards for work completed in this course. Any of these violations will be considered academic dishonesty and treated as such. These guidelines are in addition to any University-wide guidelines concerning academic dishonesty, which may be in effect. All course assignments will be scanned through Turnitin, and any misconduct will result in a failing grade for the course. 
+
+1.	__Cheating__: the giving or receiving of any unauthorized assistance on any academic work;
+2.	__Plagiarism__: presenting the language, structures or ideas of another person or persons as one’s own academic work;
+3.	__Falsification__: Any untrue statement, either oral or written, concerning one’s own academic work or the academic work of another student, or the unauthorized alteration of any academic record; and
+4.	__Original work__: Unless specifically allowed by the instructor, all academic work undertaken in a course must be original (i.e., it must not have been submitted in a prior course or be submitted in a course being taken concurrently).
+
+## Respectful & Appropriate Class Conduct
+
+Public policy processes, including the criminal justice system, inherently center on topics and issues for which individuals hold strong opinions, based on their personal values, beliefs, and interests. As a result, this course will challenge students to not only acknowledge and respect perspectives that differ from their own, but may call on them to challenge their own opinions and beliefs, and “step into” another’s perspective to consider the strengths and limitations of their own argument. 
+
+In order to facilitate this process and ensure a socially, emotionally, and psychologically safe environment, **respectful behavior is the expectation, norm, and requirement in this class.** Arguments and ideas may (and are expected to) be challenged, but personal attacks, disrespectful behavior, and/or hateful attitudes towards people or any groups of people will not be tolerated.
+
+## Course Work
+
+### Assignments
+
+This class will require you to complete significant work outside of class, even more than what would be ‘normal’ for this class in a full semester-length course. As an overview, you will be required to attend and participate in our  Zoom meetings; take quizzes; read assigned chapters from the textbook; listen to a podcast, and respond with a high-quality posting regarding that podcast episode(s); complete one essay; and there is a final exam. 
+
+### Late Policy
+
+All assignments submitted after the due date are subject to a **ten percent deduction**. An additional ten percent is deducted for each additional 24 hours the assignment is late. Please note the specific due dates for all assignments – which are always due prior to the start of class. Due to the shortened nature of this course, **no deadlines past the final day of the academic calendar – August 4, 2021 – will be considered**. Missing submissions will be awarded zero points automatically. Perhaps the the most important point -- contact me beforehand if you are experiencing difficulties that will impact your ability to turn in work! Reaching out after the due date has passed is not helpful to you or me.
+
+## Grading and Points Distribution
+
+This class has *approximately* 358 points available through quizzes, assignments, and projects:
+
+- Weekly quizzes - 55 points
+- Discussion postings - 78 points
+- Final Essay - 100 points
+- Final Quiz - 125 points
+
+That means: 
+
+- About **15%** of your grade will be determined by short quizzes.
+- About **21%** of your grade will be determined discussion posts.
+- About **28%** of your grade will be determined by your final essay.
+- About **35%** of your grade will be determined by your final exam.
+
+Please keep in mind that these are approximations, and throughout the course I may modify the course and assignments as needed. I will communicate any such changes through the Canvas course announcements.
+
+### Contested Grades
+
+If you would like your assignment regraded, please email me in advance of our meeting. In this email, please state clearly what the issue is and the reasons that you feel justify an adjustment to your grade. Once I receive your email, we will schedule an in-person meeting to discuss your request. Please be aware, if I agree to regrade, the entire assignment will be evaluated again. This means that your grade can be lowered as well as raised. The new grade will be final.
+
+## Attendance Policy
+
+Due to the shortened nature of the course, attendance is mandatory (three live Zoom meetings). Consider that with only six weeks, missing a single class is equivalent to missing up to *three weeks* in a normal length course. We all have busy lives, so being late is not a problem (though not preferred), and I’d rather you miss one hour than three. Students are expected to fully engage in the discussion in each class. *The purpose of the class is for everyone to discuss the readings, not to have them explained.* I will not take formal attendance if the class is small; however, in larger classes, attendance may be marked. In either case, failure to regularly attend and participate in class discussion will negatively affect your grade.
+
+## Instructor Expectations
+
+I commit to being your mentor and facilitator of the classroom experience, and to the following expectations for this course:
+
+- I will design the course to include lectures, readings materials, and assignments that will challenge students and will provide them with opportunities to learn and practice course content.
+- Though this is an online course, it is not a class that is run “automatically” by technology. I interact with the class via announcements, virtual office hours, emails/the Canvas Inbox, feedback on assignments, and comments on lecture bulletin boards, among other methods.
+- I will respond to emails in a timely fashion. “Timely” in this instance means within 48 hours, not including weekends and holidays. *Normally*, I am quite a bit faster, but like everyone else, life sometimes intervenes.
+- I will be available for individual consultation via virtual office hours, email, or phone. Students will not be required to come to campus in order to meet with me, nor does it have to be during 'bankers hours.'
+- I will provide feedback on the assignments in a timely manner.
+- I will follow all [official University of Utah policies](https://registrar.utah.edu/handbook/) regarding conduct in the classroom, incompletes, and accommodations. Accommodations will be considered on an individual basis and only with required documentation. See the **University Policies** section at the end of this syllabus for more information and resources.
+
+## Student Expectations
+
+Though the online format allows students greater flexibility to complete their work, this course does have a structure and timeline, including due dates for course assignments. As such, the following is expected of all students in this class:
+
+- Students will log in to the course a minimum of 3 times per week.
+- Students may be expected to work with classmates; however, students are not expected to interact with their classmates in person. A good alternative to meeting in person would be online video conferencing, which allows students to find a time to meet that works best for their schedule. Depending on the assignment, students can also choose to interact with their classmates with whatever technology they are most comfortable with.
+- To do well in online courses, students must be self-motivated, organized, and willing to stay on top of their schedule. Students should take control of their learning while in this course.
+- Students will regularly check course announcements. The Announcements area is the instructor’s official means of communication when distributing information to the entire class.
+- Students will [update their Canvas settings](https://support.tlt.utah.edu/hc/en-us) to ensure they receive timely notifications from the course.
+- If students have any questions, are struggling with course materials, or need further assistance from their instructor, they will take the initiative to contact their instructor via the Inbox feature in Canvas or via email. Email is not perfect; sometimes, messages sent to instructors are lost before they are read. If you do not hear back from your instructor 3 days after sending a message, please contact your instructor again.
+- Students will engage with the course, students, and the instructor in a respectful and professional manner at all times.
+
+# University Policies
+
+It is my intent that students from all diverse backgrounds and perspectives be well served by this course, that students’ learning needs be addressed both in and out of class, and that the diversity that students bring to this class be viewed as a resource, strength, and benefit. It is my intent to present materials and activities that are respectful of diversity: gender, sexuality, disability, age, socioeconomic status, ethnicity, race, and culture. Your suggestions are encouraged and appreciated. Please let me know ways to improve the effectiveness of the course for you personally or for other students or student groups. In addition, if any of our class meetings conflict with your religious events, please let me know so that we can make arrangements for you. The following resources and statements are drawn directly from the University of Utah guidelines. If you have questions or concerns not answered below, please contact me directly so we can work together to answer and address them.
+
+1.	*Accommodation of Sincerely Held Beliefs*:  I will work with students who require schedule changes due to religious or other significant obligations. I will not consider any requests based on course content. No other area of study touches on more sensitive topics than the broad category of "public policy" (and at times disturbing forms of human misbehavior such as criminal law). Policy researchers must read about, talk about, and listen to information relating to very difficult subjects. Sometimes case descriptions can be quite graphic. Students are required to attend all classes and to read all the assignments. All assignments and lectures are related to our subject matter.
+
+2.	*The Americans with Disabilities Act*. The University of Utah seeks to provide equal access to its programs, services, and activities for people with disabilities. If you will need accommodations in this class, reasonable prior notice needs to be given to the [Center for Disability Services](https://disability.utah.edu/), 162 Olpin Union Building, (801) 581-5020. CDS will work with you and the instructor to make arrangements for accommodations. All written information in this course can be made available in an alternative format with prior notification to the Center for Disability Services.
+
+3.	*University Safety Statement*. The University of Utah values the safety of all campus community members. To report suspicious activity, call campus police at 801-585-COPS (801-585-2677). You will receive important emergency alerts and safety messages regarding campus safety via text message. For more information regarding safety and to view available training resources, including helpful videos, visit safeu.utah.edu. 
+
+4.	*Addressing Sexual Misconduct*. Title IX makes it clear that violence and harassment based on sex and gender (which Includes sexual orientation and gender identity/expression) is a civil rights offense subject to the same kinds of accountability and the same kinds of support applied to offenses against other protected categories such as race, national origin, color, religion, age, status as a person with a disability, veteran’s status or genetic information.  If you or someone you know has been harassed or assaulted, you are encouraged to report it to the Title IX Coordinator in the Office of Equal Opportunity and Affirmative Action, 135 Park Building, 801-581-8365, or the Office of the Dean of Students, 270 Union Building, 801-581-7066.  For support and confidential consultation, contact the Center for Student Wellness, 426 SSB, 801-581-7776.  To report to the police, contact the Department of Public Safety, 801-585-2677(COPS).
+
+5.	*Undocumented Student Support Statement*. Immigration is a complex phenomenon with broad impact—those who are directly affected by it, as well as those who are indirectly affected by their relationships with family members, friends, and loved ones. If your immigration status presents obstacles to engaging in specific activities or fulfilling specific course criteria, confidential arrangements may be requested from the Dream Center. Arrangements with the Dream Center will not jeopardize your student status, your financial aid, or any other part of your residence. The Dream Center offers a wide range of resources to support undocumented students (with and without DACA) as well as students from mixed-status families. To learn more, please contact the Dream Center at 801.213.3697 or visit the [Dream Center website](https://d.docs.live.net/88e07230498ff330/dream.utah.edu).
+
+6.	*Veterans’ Center*. If you are a student veteran, the U of Utah has a Veterans Support Center located in Room 161 in the Olpin Union Building. Hours: M-F 8-5 pm. Please visit their website for more information about what support they offer, a list of ongoing events, and links to outside resources: [Veteran's Center](http://veteranscenter.utah.edu/). Please also let me know if you need any additional support in this class for any reason.
+
+7.	*Wellness Statement*. Personal concerns such as stress, anxiety, relationship difficulties, depression, cross-cultural differences, etc., can interfere with a student’s ability to succeed and thrive at the University of Utah. For helpful resources, contact the Center for Student Wellness or call at 801-581-7776.
+
+8.	*English Language Learners*. If you are an English language learner, please be aware of several resources on campus that will support you with your language and writing development. These resources include the [Writing Center](http://writingcenter.utah.edu/), the [Writing Program](http://writingprogram.utah.edu/), and the [English Language Institute](http://continue.utah.edu/eli/). Please let me know if there is any additional support you would like to discuss for this class.
+
+9.	*LGBT Resources*: I am committed to inclusivity and respect for all students in the classroom, including and not limited to LGBT individuals. Additionally, the University of Utah has an LGBT Resource Center located in the Olpin Union Building, Room 409. Their website contains more information about the support they offer, a list of events, and links to additional resources: LGBT Resources.
+
+10.	*Names/Pronouns*. Class rosters are provided to the instructor with the student’s legal name as well as “Preferred first name” (if previously entered by you in the Student Profile section of your CIS account). While CIS refers to this as merely a preference, I will honor you by referring to you with the name and pronoun that feels best for you in class or on assignments. Please advise me of any name or pronoun changes so I can help create a learning environment in which you, your name, and your pronoun are respected. If you need any assistance or support, please reach out to the LGBT Resource Center: [LGBT Resources](http://lgbt.utah.edu/).
+
+11.	*Drop/Withdrawal*.  Please check the academic calendar for more information pertaining to dropping and withdrawing from a course. Withdrawing from a course, and other matters of registration, are the student’s responsibility. 
+
+12.	 *Student Code*: http://regulations.utah.edu/academics/6-400.php
+
+13.	 *Accommodation Policy (see Section Q)*: http://regulations.utah.edu/academics/6-100.php
+
+
+
+
