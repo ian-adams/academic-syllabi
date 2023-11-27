@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023) (preloaded format=xelatex 2023.11.12)  26 NOV 2023 17:22
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023) (preloaded format=xelatex 2023.11.12)  26 NOV 2023 18:24
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -691,20 +691,20 @@ File: ts1ppl.fd 2001/06/04 font definitions for TS1/ppl.
 ] [2] [3] [4] [5]
 File: figs/calendar.pdf Graphic file (type pdf)
 <use figs/calendar.pdf>
-[6] [7] [8] [9] [10] [11]
+[6] [7] [8] [9] [10] [11] [12]
 File: figs/attendplot.pdf Graphic file (type pdf)
 <use figs/attendplot.pdf>
-[12] [13] [14] [15]
-Overfull \hbox (8.79797pt too wide) in paragraph at lines 1228--1241
+[13] [14] [15] [16]
+Overfull \hbox (8.79797pt too wide) in paragraph at lines 1270--1283
 \T1/ppl/m/n/10.95 skills, set-ting goals, and con-nect-ing to a va-ri-ety of cam-pus re-sources. Through-out the semester,
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1276--1281
+Underfull \hbox (badness 10000) in paragraph at lines 1318--1323
 
  []
 
-[16] [17] 
+[17] [18] 
 enddocument/afterlastpage: lastpage setting LastPage.
 (./CRJU-311-Spring-2024.aux)
  ***********
@@ -712,15 +712,15 @@ LaTeX2e <2023-11-01>
 L3 programming layer <2023-11-01>
  ***********
 Package rerunfilecheck Info: File `CRJU-311-Spring-2024.out' has not changed.
-(rerunfilecheck)             Checksum: FCF73E3AA15F49CE399408862159FC69;3592.
+(rerunfilecheck)             Checksum: B958E3DC977168252DE38918FB27491F;4276.
  ) 
 Here is how much of TeX's memory you used:
- 22302 strings out of 476914
- 418841 string characters out of 5804200
+ 22312 strings out of 476914
+ 418929 string characters out of 5804200
  1928164 words of memory out of 5000000
- 43736 multiletter control sequences out of 15000+600000
+ 43746 multiletter control sequences out of 15000+600000
  580441 words of font info for 82 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 84i,13n,89p,1209b,402s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 84i,13n,89p,1209b,408s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on CRJU-311-Spring-2024.pdf (17 pages).
+Output written on CRJU-311-Spring-2024.pdf (18 pages).

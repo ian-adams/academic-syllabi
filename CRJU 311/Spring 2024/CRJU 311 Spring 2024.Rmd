@@ -11,8 +11,8 @@ date: "Summer 2023"
 
 email: "ian.adams@sc.edu"
 web: "ianadamsresearch.com"
-officehours: "Remote"
-office: "Remote"
+officehours: "On Request"
+office: "Currell 114"
 classroom: "Online"
 classhours: "Asynchronous"
 
@@ -83,22 +83,24 @@ rubric <- read_csv(here("CRJU 314", "discussion-rubric.csv"))
 # Any number of ways to identify dates in R, but we'll use {lubridate} and the ymd() function here.
 # Format: YYYYMMDD. In this example, 4 January 2021.
 
-mon <- ymd(20230619)
+mon <- mdy(01082024)
 
 # What are some dates you won't be here? In this example, I had a conference on 7 January 2021.
 # Spring Break was 15 March 2021 to 19 March 2021.
 # ymd(20211125), #for single day
 # 
 
-not_here_dates <- ymd(20230704)
+not_here_dates <- c(
+  # Spring Break
+  seq(mdy(03032024), mdy(03102024), by = 1),
+  # President's Day
+  mdy(01152024))
+
+#not_here_dates <- ymd(20230704)
   
 # seq(ymd(20211010),ymd(20211017), by=1)) #for sequence of days
 
- # not_here_dates <- c(
- #   # Spring Break
- #   seq(ymd(20230305),ymd(20230312), by=1),
- #   # ACJS 2023
- #   seq(ymd(20230314),ymd(20230317), by=1))
+
   
   # # Thanksgiving
   # seq(ymd(20221123),ymd(20221127), by=1),
@@ -112,13 +114,12 @@ not_here_dates <- ymd(20230704)
 # My intro class was fairly simple: just exams.
 #exam_dates <- c(ymd(20210218), ymd(20210401), ymd(20210429))
 
-exam_dates <- ymd(20230729)
+exam_dates <- seq(mdy(04242024), mdy(05012024), by = 1)
 
 # What are the full dates of the semester? Here, I'll exclude exam week as I like to do.
-# In this case: 6 January to 23 April
-semester_dates <- seq(ymd(20230619), ymd(20230729), by=1)
+semester_dates <- seq(mdy(01082024), mdy(05012024), by=1)
 
-final_day <- mdy(07292023)
+final_day <- mdy(05012024)
 
 # Custom function for treating the first day of the month as the first week 
 # of the month up until the first Sunday (unless Sunday was the start of the month)
@@ -128,7 +129,7 @@ wom <- function(date) {
   }
 
 # Create a data frame of dates, assign to Cal
-tibble(date = seq(ymd(20230601), ymd(20230731), by=1))  %>%
+tibble(date = seq(mdy(01012024), mdy(05312024), by=1))  %>%
   mutate(mon = lubridate::month(date, label=T, abbr=F), # get month label
          wkdy = weekdays(date, abbreviate=T), # get weekday label
          wkdy = fct_relevel(wkdy, "Sun", "Mon", "Tue", "Wed", "Thu","Fri","Sat"), # make sure Sunday comes first
@@ -166,12 +167,12 @@ Cal %>%
   # manually fill scale colors to something you like...
   scale_fill_manual(values=c("Class Day"="steelblue", 
                              "Semester"="lightsteelblue",
-                             "NA" = "white", # I like these whited out...
-                             "Exams"="indianred4"),
+                             "NA" = "indianred4", # I like these whited out...
+                             "Exams"="forestgreen"),
                     #... but also suppress a label for a non-class semester day
                     breaks=c("Class Day","Exams")) +
   labs(fill = "", x="", y="",
-       caption = "Notable dates: July 4 Holiday")  -> class_cal
+       caption = "Notable dates: Spring Break March 3–10")  -> class_cal
 
 ```
 
@@ -192,11 +193,11 @@ grades <- read_csv(here("CRJU 311", "grading-scheme.csv"))
 rubric <- read_csv(here("CRJU 311", "discussion-rubric.csv"))
 
 
-firstday <- "2023-06-19"
+firstday <- "01-08-2024"
     
-meetings <- ymd(firstday) + c(0:6) * weeks(1)
+meetings <- mdy(firstday) + c(0:15) * weeks(1)
 
-meeting_headers <- paste0("Week ", 1:6, ", ", months(meetings), " ", day(meetings))
+meeting_headers <- paste0("Week ", 1:16, ", ", months(meetings), " ", day(meetings))
 
 ```
 
@@ -325,7 +326,7 @@ For a brief introduction to Packback Questions and why we are using it in class,
 
 This class will require you to complete significant work. As an overview, you will be required to attend and participate in our class meetings; take quizzes; read assigned chapters from the textbook; respond to discussions with a high-quality posting ; and there is a final exam. The bottom of this syllabus has more detailed information on assignment types and expectations.
 
-Note that because this is a shortened summer course, there is more weekly work than would be expected in a full-semester course of the same type. You will be completing up to three weeks of work in any given week! Failure to complete all work **WILL REDUCE YOUR GRADE**. It is your responsibility to keep up with the workload.
+If you signed up for a shortened summer course, there is more weekly work than would be expected in a full-semester course of the same type. You will be completing up to three weeks of work in any given week! Failure to complete all work **WILL REDUCE YOUR GRADE**. It is your responsibility to keep up with the workload.
 
 
 ## Finals Information
@@ -373,9 +374,9 @@ If you have problems with your computer, technology, IT-related questions, suppo
 
 # Class Schedule
 
-Students must read all assigned material prior to our class session.  Important: class readings are subject to change, contingent on mitigating circumstances and the progress we make as a class.  Students are encouraged to attend lectures and check the course Blackboard website for updates. 
+Students must read all assigned material prior to our class session.  Important: class readings are subject to change, contingent on mitigating circumstances and the progress we make as a class.  Students are encouraged to attend lectures and check the course Blackboard website for updates. Generally, this class runs on a Monday (start) to Sunday (end), but be sure to check the due dates every week carefully to ensure you are meeting assigned deadlines.
 
-Here is an overview calendar for the course. The semester is in light blue, meeting days are highlighted in darker blue. Final exam week is highlighted in red. If a date is white, that means no class due to breaks. 
+Here is an overview calendar for the course. The semester is in light blue, meeting days are highlighted in darker blue (not present if an online asynchronous class). Final exam week is highlighted in green. If a date is red, that means no class. 
 
 ```{r calendar, echo=F, eval=T, fig.cap="Calendar for CRJU 311: Policing, Summer 2023",  warning=F, fig.width=11, fig.height=7}
 
@@ -387,54 +388,112 @@ class_cal
 
 This course is arranged into topics for each week, which correspond with our textbook chapters. Please see the Blackboard course for details and links for each week's activities. Note that the dates below mark the *start of the week*. **You are expected to still complete the week's reading and assignments even if we are in a holiday week!**
 
-##  `r meeting_headers[1]` : FOUNDATIONS
+##  `r meeting_headers[1]` : 
 
-**Readings:** 
+**Topics:** Class Introduction; Nature, Police & Society
 
-- Chapter 1 Police and Society 
-- Chapter 2 The History of the American Police
-- Chapter 3 The Contemporary Law Enforcement Industry
+**Readings:** Familiarize yourself with online components and get registered! Read the Syllabus, Code of Conduct, Preface, Chapter 1
 
 
-##  `r meeting_headers[2]` : OFFICERS AND ORGANIZATIONS
+##  `r meeting_headers[2]` : 
 
-**Readings:** 
+**Topics:** The History of the American Police
 
-- Chapter 4 Police Organizations
-- Chapter 5 Police Officers I: Recruitment and Training for a Changing Society
-- Chapter 6 Police Officers II: On the Job
+**Readings:** Chapter 2
 
 
-##  `r meeting_headers[3]` : POLICE WORK I
+##  `r meeting_headers[3]` :
 
-**Readings:** 
+**Topics:** The Contemporary Law Enforcement Industry
 
-- Chapter 7 Patrol: The Backbone of Policing
-- Chapter 8 Peacekeeping and Order Maintenance
-
-
-##  `r meeting_headers[4]` : POLICE WORK II
-
-**Readings:** 
-
-- Chapter 9 The Police and Crime
-- Chapter 10 Advances in Police Strategy
-
-##  `r meeting_headers[5]` : ISSUES IN POLICING I
-
-**Readings:** 
-
-- Chapter 11 Police Discretion
-- Chapter 12 Legitimacy and Trust and Confidence in the Police
-- Chapter 13 Police Corruption
+**Readings:** Chapter 3
 
 
-##  `r meeting_headers[6]` : ISSUES IN POLICING II 
+##  `r meeting_headers[4]` : 
 
-**Readings:** 
+**Topics:** Police Organizations
 
-- Chapter 14 Accountability of the Police
-- Chapter 15 The Future of Policing in America
+**Readings:** Chapter 4
+
+##  `r meeting_headers[5]` :
+
+**Topics:** Police Officers 1: Recruitment and Training for a Changing Society
+
+**Readings:** Chapter 5
+
+
+##  `r meeting_headers[6]` :
+
+**Topics:** Police Officers 2: On the Job
+
+**Readings:** Chapter 6
+
+
+##  `r meeting_headers[7]` :
+
+**Topics:** Patrol: The Backbone of Policing
+
+**Readings:** Chapter 7
+
+
+##  `r meeting_headers[8]` :
+
+**Topics:** Peacekeeping and Order Maintenance
+
+**Readings:** Chapter 8
+
+
+##  `r meeting_headers[9]` :
+
+**Topics:** The Police and Crime
+
+**Readings:** Chapter 9
+
+**Note:** This is Spring Break (March 3-10, 2024). No assignments due this week. The quiz and reading materials related to this chapter are available beginning this week and available through the end of the semester, and due **no later than 11:59 p.m. on `r format(final_day, '%B %d, %Y')`**. Because they are available throughout the semester, there obviously will be no late assignments accepted.
+
+
+##  `r meeting_headers[10]` :
+
+**Topics:** Advances in Police Strategy
+
+**Readings:** Chapter 10
+
+##  `r meeting_headers[11]` :
+
+**Topics:** Police Discretion
+
+**Readings:** Chapter 11
+
+##  `r meeting_headers[12]` :
+
+**Topics:** Legitimacy and Trust and Confidence in the Police
+
+**Readings:** Chapter 12
+
+
+##  `r meeting_headers[13]` :
+
+**Topics:** Police Corruption
+
+**Readings:** Chapter 13
+
+##  `r meeting_headers[14]` :
+
+**Topics:** Accountability of the Police
+
+**Readings:** Chapter 14
+
+##  `r meeting_headers[15]` :
+
+**Topics:** The Future of Policing in America
+
+**Readings:** Chapter 15
+
+##  `r meeting_headers[16]` :
+
+**FINALS WEEK & FINAL EXAM** Your final exam is due **no later than 11:59 p.m. on `r format(final_day, '%B %d, %Y')`**. There will *absolutely* be no assignments, quizzes, or exams accepted after that date and time. None. Add it to your calendar now. Failure to submit any assignment, quiz, or exam by that date and time will automatically be counted as a zero towards your final grade. I will accept no appeals on this, so please plan ahead.
+
+**Final Exam:** Final Exam is available during finals week (`r format(exam_dates, '%B %d, %Y')`), and is due by 11:59 p.m. on **`r format(final_day, '%B %d, %Y')`**. This means you have approximately one week in which to complete the exam.
 
 **ALL ASSIGNMENTS AND FINAL EXAM due by 11:59PM on `r format(final_day, '%B %d, %Y')`**. Nothing will be accepted after that time and date!
 
