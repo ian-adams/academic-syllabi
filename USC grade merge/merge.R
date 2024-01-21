@@ -10,15 +10,15 @@ library(writexl)
 ## Remember to download the Blackboard grades as LETTERS not NUMBERS
 
 ## Store the filename of the Banner export
-banner_filename <- "202305_CRJU - Criminal Justice_311_J11_Template.xlsx"
+banner_filename <- "202308_CRJU - Criminal Justice_314_002_Template.xlsx"
 
 ## Read in Banner (i.e., USC export from Banner grade system) and Blackboard data
-banner <- read_excel("USC grade merge/202305_CRJU - Criminal Justice_311_J11_Template.xlsx")
+banner <- read_excel("USC grade merge/202308_CRJU - Criminal Justice_314_002_Template.xlsx")
 
 # read in the blackboard dataset and rename Final Grade to BB_Final_Grade
-blackboard <- read_excel("USC grade merge/gc_CRJU311-J11-SUMMER-2023_fullgc_2023-07-30-19-50-15.xlsx") %>%
+blackboard <- rio::import("USC grade merge/fall 2023 blackboard grades.xlsx") %>%
   # override weird Blackboard export naming the Overall Grade
-  rename('Final Grade' = 'Overall Grade [Total Pts: up to 492 Letter] |6610433') 
+  rename('Final Grade' = 'Overall Grade [Total Pts: up to 501 Letter] |6686369') 
 
 # Only needed if you have a scheme that exports with "minus" grades
 # Remove the minus grades from the Final Grade column in the blackboard dataset

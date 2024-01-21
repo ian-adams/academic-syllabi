@@ -269,6 +269,24 @@ The text above is required for a student to be successful in this course. You **
 
 Access the textbook, quizzes, and readings through Blackboard by clicking on the relevant links in the course. The first time you click on a textbook, quiz, or reading assignment, you will be taken to the publisher webpage to complete registration.
 
+# General Assignment Information
+
+This class will require you to complete significant work. As an overview, you will be required to attend and participate in our class meetings; take quizzes; read assigned chapters from the textbook; respond to discussions with a high-quality posting; complete two written essays; and there is a final exam. This syllabus has more detailed information on assignment types and expectations.
+
+<!-- If you signed up for a shortened summer course, there is more weekly work than would be expected in a full-semester course of the same type. You will be completing up to three weeks of work in any given week! Failure to complete all work **WILL REDUCE YOUR GRADE**. It is your responsibility to keep up with the workload. -->
+
+## Midterm and Final Essay Information
+
+This class has two required essays, a midterm and a final. The midterm essay will open on February 19, 2024, and is due March 3, 2024 by 11:59pm (EST). The final essay will open on April 15, 2024, and is due May 1, 2024, by 11:59pm (EST). 
+
+Essays are submitted through the Packback system, the same place that weekly discussion assignments are done. **There are no late submissions allowed for either of the two essays**. Failure to submit your essay on time will result in an automatic zero grade for that assignment, which will have a significantly negative impact on your overall grade.
+
+## Final Exam Information
+
+The final exam become available to take one week prior to its due date. Your final exam is due **no later than 11:59 p.m. on `r format(final_day, '%B %d, %Y')`**. There will *absolutely* be no assignments, quizzes, or final exam accepted after that date and time. None. Add it to your calendar now. Failure to submit any assignment, quiz, or exam by that date and time will automatically be counted as a zero towards your final grade. I will accept no appeals on this, so please plan ahead.
+
+The final exam is electronically proctored. I strongly encourage you to use University of South Carolina technology (i.e., on-campus computers and WiFi) when completing the final exam and other course activities. I cannot and will not be responsible for claimed technology failures, and the campus technological facilities will help ensure you are able to complete your assignments without technical difficulties.
+
 ### Required Textbook Assignments: **Smartbook and Weekly Quizzes**
 
 Chapter SmartBook activities are due on the stated due date listed in Blackboard. Clicking on the assignment will take you to the Connect external website, where you will complete the reading activity for each assigned chapter. These activities help students practice the concepts and objectives taught in the chapter readings and aid in preparing the student for the chapter assignments and exams.  You will continue to work through these activities until you have successfully completed each assignment.  Please note the amount of time to complete these activities varies by chapter.  If you have not read the chapter and become familiar with the content, these activities will take much more time than they are structured to take. There are no late submissions for Smartbook assignments. 
@@ -281,18 +299,18 @@ Weekly quizzes and the final exam are likewise through the online portal. **Ther
 
 Late weekly quizzes will be assessed a 10% (of the available points) deduction for each 24 hours it is late. In other words, a quiz submitted five days late would be assessed a 50% reduction in the total points available. A quiz submitted ten days or more late, therefore, will be worth zero points automatically.
 
-## Required Discussion Technology - **Packback Assignments**
+## Required Discussion & Essay Technology - **Packback Assignments**
 
 Participation is a requirement for this course, and the Packback Questions platform will be used for online discussion about class topics. Packback Questions is an online community where you can be fearlessly curious and ask open-ended questions to build on top of what we are covering in class and relate topics to real-world applications. There are no lates accepted in Packback. 
 
 ### Packback Requirements
 
-There will be a weekly deadline for submissions. In order to receive full credit, you should submit the following per each deadline period:
+There will be two weekly deadlines for submissions. You are required to pose a question by that week's Wednesday, and also to provide two responses to other students' questions by Sunday. In order to receive full credit, you should submit the following per each deadline period:
 
 
 -  You **MUST** access Packback assignments through Blackboard. If you do not (for example by logging into Packback directly) you will **not receive credit for your work.** This will be considered your responsibility, and the instructor will not retroactively count work that is not submitted properly for credit.
--  Open-ended question every week with a minimum Curiosity Score of 85, worth 2 points of each assignment grade
--  Responses every week with a minimum Curiosity Score of 85, worth 4 points of each assignment grade
+-  Open-ended question every week with a minimum Curiosity Score of 80, worth 5 points of each assignment grade
+-  Responses every week with a minimum Curiosity Score of 80, worth 6 points of each assignment grade
 -  Half credit will be provided for questions and responses that do not meet the minimum curiosity score.
 
 There are **no late Packback assignments allowed**. The point of a discussion is to interact with the class - if you try to "go back" to a previous discussion, you will be talking to an empty room. I highly recommend you not leave these assignments until the last minute!
@@ -322,18 +340,7 @@ For a brief introduction to Packback Questions and why we are using it in class,
 <!-- -  Stitcher Podcasts: [Serial Podcast on Stitcher](https://www.stitcher.com/podcast/this-american-life/serial) -->
 <!-- -  Google Podcasts: [Stitcher Podcast on Google](https://podcasts.google.com/?feed=aHR0cDovL2ZlZWRzLnNlcmlhbHBvZGNhc3Qub3JnL3NlcmlhbHBvZGNhc3Q%3D) -->
 
-## General Assignment Information
 
-This class will require you to complete significant work. As an overview, you will be required to attend and participate in our class meetings; take quizzes; read assigned chapters from the textbook; respond to discussions with a high-quality posting ; and there is a final exam. The bottom of this syllabus has more detailed information on assignment types and expectations.
-
-If you signed up for a shortened summer course, there is more weekly work than would be expected in a full-semester course of the same type. You will be completing up to three weeks of work in any given week! Failure to complete all work **WILL REDUCE YOUR GRADE**. It is your responsibility to keep up with the workload.
-
-
-## Finals Information
-
-Your final exam becomes available at midnight on `r format(final_day, '%B %d, %Y')`. The final is due **no later than 11:59 p.m. on `r format(final_day, '%B %d, %Y')`**. There will *absolutely* be no assignments, quizzes, or final exam accepted after that date and time. None. Add it to your calendar now. Failure to submit any assignment, quiz, or exam by that date and time will automatically be counted as a zero towards your final grade. I will accept no appeals on this, so please plan ahead.
-
-The final exam is electronically proctored. I strongly encourage you to use University of South Carolina technology (i.e., on-campus computers and WiFi) when completing the final exam and other course activities. I cannot and will not be responsible for claimed technology failures, and the campus technological facilities will help ensure you are able to complete your assignments without technical difficulties.
 
 # Contacting the Instructor
 
@@ -376,9 +383,9 @@ If you have problems with your computer, technology, IT-related questions, suppo
 
 Students must read all assigned material prior to our class session.  Important: class readings are subject to change, contingent on mitigating circumstances and the progress we make as a class.  Students are encouraged to attend lectures and check the course Blackboard website for updates. Generally, this class runs on a Monday (start) to Sunday (end), but be sure to check the due dates every week carefully to ensure you are meeting assigned deadlines.
 
-Here is an overview calendar for the course. The semester is in light blue, meeting days are highlighted in darker blue (not present if an online asynchronous class). Final exam week is highlighted in green. If a date is red, that means no class. 
+Here is an overview calendar for the course. The semester is in light blue, meeting days are highlighted in darker blue. Final exam week is highlighted in green. If a date is red, that means no class. 
 
-```{r calendar, echo=F, eval=T, fig.cap="Calendar for CRJU 311: Policing, Summer 2023",  warning=F, fig.width=11, fig.height=7}
+```{r calendar, echo=F, eval=T, fig.cap="Calendar for CRJU 311: Policing",  warning=F, fig.width=11, fig.height=7}
 
 class_cal
 
@@ -449,8 +456,6 @@ This course is arranged into topics for each week, which correspond with our tex
 
 **Readings:** Chapter 9
 
-**Note:** This is Spring Break (March 3-10, 2024). No assignments due this week. The quiz and reading materials related to this chapter are available beginning this week and available through the end of the semester, and due **no later than 11:59 p.m. on `r format(final_day, '%B %d, %Y')`**. Because they are available throughout the semester, there obviously will be no late assignments accepted.
-
 
 ##  `r meeting_headers[10]` :
 
@@ -485,11 +490,17 @@ This course is arranged into topics for each week, which correspond with our tex
 
 ##  `r meeting_headers[15]` :
 
-**Topics:** The Future of Policing in America
+**Topics:** Crimes Against the Administration of Justice
 
 **Readings:** Chapter 15
 
 ##  `r meeting_headers[16]` :
+
+**Topics:** Organized Crime, Gangs, & Terrorism
+
+**Readings:** Chapter 16
+
+##  `r meeting_headers[17]` :
 
 **FINALS WEEK & FINAL EXAM** Your final exam is due **no later than 11:59 p.m. on `r format(final_day, '%B %d, %Y')`**. There will *absolutely* be no assignments, quizzes, or exams accepted after that date and time. None. Add it to your calendar now. Failure to submit any assignment, quiz, or exam by that date and time will automatically be counted as a zero towards your final grade. I will accept no appeals on this, so please plan ahead.
 
@@ -522,30 +533,32 @@ This class will require you to complete significant work outside of class. As an
 
 ### Grading and Points Distribution
 
-This class has *approximately* 492 points available through quizzes, readings, discussions, and final exam:
+This class has *approximately* 724 points available through quizzes, readings, discussions, and final exam:
 
-- Weekly quizzes - 150 points - About **30.5%** of your grade
-- Packback discussions - 72 points - About **14.6%** of your grade
-- Smartbook readings - 150 points - About **30.5%** of your grade
-- Final Exam - 120 points - About **24.4%** of your grade
+- Weekly quizzes - 150 points - About **20.7%** of your final grade
+- Smartbook readings - 150 points - About **20.7%** of your final grade
+- Packback discussions - 154 points - About **21.3%** of your final grade
+- Midterm Essay - 50 points - About **7%** of your final grade
+- Final Essay - 100 points - About **13.8%** of your final grade
+- Final Exam - 120 points - About **16.6%** of your final grade
 
 Please keep in mind that these are approximations. If situations arise that require me to adjust these, I will communicate in class.
 
 ### Weekly Quizzes
 
-Each week you are required to answer a short quiz. The questions in every quiz are drawn directly from that week’s lecture and readings. The questions are also very similar to the questions you will encounter in the final exam! If you are keeping up on your reading, they should not pose too much difficulty. The questions are randomly drawn from a large pool of questions, so each student will be presented with a different quiz. 
+Each week you are required to answer a short quiz. The questions in every quiz are drawn directly from that week’s readings. The questions are also very similar to the questions you will encounter in the final exam! If you are keeping up on your reading, they should not pose too much difficulty. The questions are randomly drawn from a large pool of questions, so each student will be presented with a different quiz. 
 
 ### Discussion Postings
 
-Every week, I will post a starter question on a discussion thread in Packback. You are required to respond to my starter question. You are also required to post your own question thread, as well as respond to another student's question.
+Every week, you are required to participate in a discussion on the Packback course software (details above). You are required to respond to my starter question. You are also required to post your own question thread, as well provide two responses to other students' questions. Note - your question is due the *Wednesday* of the week, while your two responses are due the following *Sunday*.
 
 Some advice and rules: 
 
-(a)	Do not wait until the last day to make your postings. This requirement will ensure that you have plenty of response options over the weekend when it comes to posting a response. *Post early, post often*.
+(a)	Do not wait until the last day to make your postings. This requirement will ensure that you have plenty of response options over the weekend when it comes to posting a response. *Post early, post often*. Remember to post your question by Wednesday! This will ensure other students have plenty of options when deciding what to answer.
 
 (b)	When you post something on the discussion board, you should try to use class material, current events, and inject your personal opinion backed by evidence. A high-quality mandatory posting will be at least two paragraphs in length (but need not necessarily be more than two paragraphs) and will contain a cogent argument which responds directly to the question asked and does not contain spelling or grammatical errors. A high-quality posting in response to another students posting may be slightly shorter in length than the initial posting (but should be at least one full paragraph in length, or 4-5 sentences) and should still contain a cogent argument and correct spelling and grammar.
 
-(c)	Each of the posting assignments is worth up to 6 points – in other words, you could receive less than 6 points if your posting does not conform to the course criteria. 
+(c)	Each of the posting assignments is worth up to 11 points – in other words, you could receive less than 11 points if your posting does not conform to the course criteria. 
 
 (d)	Although I want to use this portion of the class to foster a healthy and vigorous debate between students, I reserve the right to delete any posting I choose. I will delete a posting if it is unreasonably derogatory towards another student or violates university policy. Otherwise, the posting board will be fair game. If I delete your posting, you will not receive credit for it. In short, engage with each other, but please make every effort to be respectful.
 
@@ -637,10 +650,9 @@ The findings hold even when I subset the data to cases where attendance is great
 
 ## Instructor Expectations
 
-I commit to being your mentor and facilitator of the classroom experience, and to the following expectations for this course:
+I commit to being your mentor and facilitator of the educational experience, and to the following expectations for this course:
 
-- I will design the course to include lectures, readings materials, and assignments that will challenge students and will provide them with opportunities to learn and practice course content.
-- Though this course has online components (quizzes, discussions, etc.), it is not a class that is run “automatically” by technology. I interact with the class via announcements, virtual office hours, emails/the Blackboard Inbox, feedback on assignments, discussion and lecture in class, and comments on lecture bulletin boards, among other methods.
+- I will design the course to include readings materials and assignments that will challenge students and will provide them with opportunities to learn and practice course content.
 - I will respond to emails in a timely fashion. “Timely” in this instance means within 24-72 hours, not including weekends and holidays. *Normally*, I am quite a bit faster, but like everyone else, life sometimes intervenes. If you do not hear from me within 72 hours, please email again.
 - I will be available for individual consultation via virtual office hours, email, or phone. Students will not be required to come to campus in order to meet with me, nor does it have to be during 'bankers hours.'
 - I will provide feedback on assignments in a timely manner.
