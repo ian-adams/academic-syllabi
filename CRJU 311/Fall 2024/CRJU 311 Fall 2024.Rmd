@@ -1,0 +1,771 @@
+---
+output: 
+  stevetemplates::syllabus:
+    latex_engine: xelatex
+    dev: cairo_pdf
+geometry: margin=1in
+
+title: "CRJU 311: Policing"
+author: Ian T. Adams
+date: "Summer 2023"
+
+email: "ian.adams@sc.edu"
+web: "ianadamsresearch.com"
+officehours: "On Request"
+office: "Currell 114"
+classroom: "Online"
+classhours: "Asynchronous"
+
+fontfamily: mathpazo
+fontsize: 11pt
+header-includes:
+   - \linespread{1.05}
+---
+ <!-- CCCCCCCCnncdxxxxxxx -->
+<!-- Fun fact: my cat added this comment as she walked over the keyboard while I was working on this template. -->
+<!-- I'm going to keep it going forward. Long live Queen Bea. -->
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(cache=FALSE, dev='pdf')
+knitr::opts_chunk$set(cache=F,
+                      fig.path = 'figs/',
+                      cache.path='cache/',
+                      warning=F,
+                      message=F)
+
+knitr::opts_chunk$set(
+                  fig.process = function(x) {
+                      x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
+                      if (file.rename(x, x2)) x2 else x
+                      }
+                  )
+
+
+advdate <- function(obj, adv) {
+ tmon <- obj + 7*(adv-1)
+ tfri <- obj + 4 + 7*(adv-1)
+ tmon <- format(tmon, format="%m/%d")
+ tfri <- format(tfri, format="%m/%d")
+ zadv <- sprintf("%02d", adv)
+ tmp <- paste("Week ",zadv,sep='',", ", tmon," - ",tfri)
+ return(tmp)
+}
+
+options(scipen=999)
+library(tidyverse)
+library(stevemisc)
+#library(ggpmisc)
+#library(anonymizer)
+# library(ggcal)
+#library(stringr)
+#library(kfigr)
+#library(broom)
+library(lubridate)
+library(here)
+library(kableExtra)
+
+
+
+
+## For discussion grading rubric
+rubric <- read_csv(here("CRJU 314", "discussion-rubric.csv"))
+
+
+# library(RefManageR)
+# library(knitcitations)
+# library(rcrossref)
+#bib <- ReadBib("~/Dropbox/master.bib")
+#myopts <- BibOptions(bib.style = "authoryear", style="latex", first.inits=FALSE, max.names = 20)
+
+# Create a calendar for your syllabus ----
+# Source: http://svmiller.com/blog/2020/08/a-ggplot-calendar-for-your-semester/
+
+# 1) what is the first Monday of the semester?
+# Any number of ways to identify dates in R, but we'll use {lubridate} and the ymd() function here.
+# Format: YYYYMMDD. In this example, 4 January 2021.
+
+mon <- mdy(08192024)
+
+# What are some dates you won't be here? In this example, I had a conference on 7 January 2021.
+# Spring Break was 15 March 2021 to 19 March 2021.
+# ymd(20211125), #for single day
+# 
+
+not_here_dates <- c(
+  # Labor Day
+  mdy(09022024),
+  # Fall Break
+  seq(mdy(10172024), mdy(10182024), by = 1),
+  # Thanksgiving Break
+  seq(mdy(11242024), mdy(11292024), by = 1))
+  
+
+#not_here_dates <- ymd(20230704)
+  
+# seq(ymd(20211010),ymd(20211017), by=1)) #for sequence of days
+
+
+  
+  # # Thanksgiving
+  # seq(ymd(20221123),ymd(20221127), by=1),
+  # # General Election Day
+  #  ymd(20221108),
+  # # Southern ACJS
+  #  seq(ymd(20220913),ymd(20220915), by=1)
+  # )
+
+# You can adjust this as you see fit. Basically: add assignment types (e.g. papers, quizzes).
+# My intro class was fairly simple: just exams.
+#exam_dates <- c(ymd(20210218), ymd(20210401), ymd(20210429))
+
+#exam_dates <- seq(mdy(04242024), mdy(05012024), by = 1)
+exam_dates <- mdy(12092024)
+
+# What are the full dates of the semester? Here, I'll exclude exam week as I like to do.
+semester_dates <- seq(mdy(08012024), mdy(12312024), by=1)
+
+final_day <- mdy(12092024)
+
+# Custom function for treating the first day of the month as the first week 
+# of the month up until the first Sunday (unless Sunday was the start of the month)
+wom <- function(date) {
+    first <- wday(as.Date(paste(year(date),month(date),1,sep="-")))
+    return((mday(date)+(first-2)) %/% 7+1)
+  }
+
+# Create a data frame of dates, assign to Cal
+tibble(date = seq(mdy(08012024), mdy(12312024), by=1))  %>%
+  mutate(mon = lubridate::month(date, label=T, abbr=F), # get month label
+         wkdy = weekdays(date, abbreviate=T), # get weekday label
+         wkdy = fct_relevel(wkdy, "Sun", "Mon", "Tue", "Wed", "Thu","Fri","Sat"), # make sure Sunday comes first
+         semester = ifelse(date %in% semester_dates, 1, 0), # is date part of the semester?
+         exams = ifelse(date %in% exam_dates, 1, 0), # is it an exam?
+         not_here = ifelse(date %in% not_here_dates, 1, 0), # is it a day off?
+         day = lubridate::mday(date), # get day of month to add later as a label
+         # Below: our custom wom() function
+         week = wom(date)) -> Cal
+
+# Create a category variable, for filling.
+# I can probably make this a case_when(), but this will work.
+
+Cal %>%
+  mutate(category = NA,
+         category = ifelse(semester == 1, "Semester", category),
+         #category = ifelse(semester == 1 & wkdy %in% "Thu", "Class Day", category),
+         #category = ifelse(semester == 1 & wkdy %in% "Tue", "Class Day", category),
+         category = ifelse(exams == 1, "Exams", category),
+         category = ifelse(is.na(category) | (semester == 1 & not_here == 1), "NA", category)) -> Cal 
+
+Cal %>% 
+  ggplot(.,aes(wkdy, week)) +
+  # custom theme stuff below
+  # theme_steve_web() + 
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank()) +
+  # geom_tile and facet_wrap will do all the heavy lifting
+  geom_tile(alpha=0.8, aes(fill=category), color="black", size=.45) +
+  facet_wrap(~mon, scales="free", ncol=3) +
+  # fill in tiles to make it look more "calendary" (sic)
+  geom_text(aes(label=day),family="Open Sans") +
+  # put your y-axis down, flip it, and reverse it
+  scale_y_reverse(breaks=NULL) +
+  # manually fill scale colors to something you like...
+  scale_fill_manual(values=c("Class Day"="steelblue", 
+                             "Semester"="lightsteelblue",
+                             "NA" = "indianred4", # I like these whited out...
+                             "Exams"="forestgreen"),
+                    #... but also suppress a label for a non-class semester day
+                    breaks=c("Class Day","Exams")) +
+  labs(fill = "", x="", y="",
+       caption = "Notable dates: Labor Day, Fall Break, Thanksgiving Break")  -> class_cal
+
+```
+
+```{r include = FALSE}
+
+## Just need to change up the 'firstday` for most semesters.
+
+library(tidyverse)
+library(lubridate)
+library(here)
+library(kableExtra)
+
+## for grading scheme
+
+grades <- read_csv(here("CRJU 311", "grading-scheme.csv"))
+
+## For discussion grading rubric
+rubric <- read_csv(here("CRJU 311", "discussion-rubric.csv"))
+
+
+firstday <- "08-20-2024"
+    
+meetings <- mdy(firstday) + c(0:15) * weeks(1)
+
+meeting_headers <- paste0("Week ", 1:16, ", ", months(meetings), " ", day(meetings))
+
+```
+
+# Course Description
+
+\hfill "It is impossible to begin to learn that which one thinks one already knows."
+
+\hfill Epictetus
+
+
+\hfill "One of the beautiful things about science is that it allows us to bumble along, getting it wrong time after time, and feel perfectly fine as long as we learn something each time."
+
+\hfill Martin A. Schwartz (2008), ["The Importance of Stupidity in Scientific Research"](https://ir.stonybrook.edu/xmlui/bitstream/handle/11401/8083/schwartzimportanceofstupidityinscience.pdf?sequence=1)
+
+
+Policing remains a critical and often debated aspect of modern society. With a significant presence in news headlines and public discourse, the role of law enforcement agencies in maintaining order, protecting life and safety in communities, and upholding the law has never been more important. As a cornerstone of the criminal justice system, policing intersects with various political institutions, community dynamics, and social issues. This course offers a comprehensive examination of the multifaceted world of policing, exploring its history, organizational structures, and the daily experiences of law enforcement officers.
+
+This class will encourage critical thinking and engaged discussions about the complexities and challenges faced by police professionals. Through an exploration of police work, including patrol, peacekeeping, order maintenance, and crime prevention, students will gain a deeper understanding of the essential role police play in our society. The course will also address pertinent issues such as police discretion, legitimacy, trust, corruption, and accountability, as well as the future of policing in America.
+
+By delving into these crucial topics, this course aims to foster informed perspectives on the role of law enforcement in society, examining the delicate balance between protecting individual rights and maintaining public safety.    
+
+## Academic Bulletin
+
+Current and historical perspectives on American policing.
+
+## Course Objectives
+
+By the end of this course, students will be able to:
+
+- Recognize the historical development, social context, and contemporary landscape of policing in the United States.
+- Differentiate between various police organizations, and comprehend the recruitment, training, and daily experiences of law enforcement officers.
+- Describe key aspects of police work, including patrol, peacekeeping, order maintenance, crime prevention, and advanced strategies.
+- Evaluate the factors influencing police discretion, legitimacy, trust, and confidence, and their implications for law enforcement practice.
+- Identify ethical and legal concerns surrounding police corruption and accountability, and understand the mechanisms for promoting transparency and ethical conduct.
+- Discuss the future of policing in America, examining the challenges and opportunities for law enforcement in the 21st century.
+- Effectively communicate and engage in informed discussions about the complexities and challenges faced by law enforcement professionals.
+
+
+## Course Days, Times, Locations
+
+This is an online, asynchronous course.
+
+<!-- Tuesday/Thursday, 11:40a to 12:55p, Petigru 108 -->
+
+<!-- **Section 002**: Tuesday/Thursday, 2:50p to 4:05p, WMBB Nursing 125 -->
+
+<!-- Gambrel Hall is [located at 817 Henderson Street](https://goo.gl/maps/dm4RBGwtwubSgmoN6). -->
+
+<!-- WMBB is the Williams Brice Building, [located at 1601 Green Street](https://goo.gl/maps/asTDgUrXWdrPr91NA). -->
+
+## Office Hours
+
+If you require help outside the class, or wish to speak directly with Dr. Adams, please contact him via email: ian.adams@sc.edu.
+
+
+# Required Materials
+
+This class has a required electronic textbook. In addition, you will need to set up external accounts in order to complete reading assignments (called **"Smartbook Assignments"**), exams, and discussion board assignments and essays (called **"Packback Assignments"**). Both types of acounts are covered below, and can be accessed directly from Blackboard by clicking on the appropriate assignment link. 
+
+Your first step upon entering the class Blackboard should be to click the "Packback Link" and the first "Chapter One Smartbook" link. You will then be directed to register for both platforms. Failure to be registered with one or both will definitely result in a failing grade, as you will not be able to complete the class requirements.
+
+## Electronic Textbook
+
+The Police in America: An Introduction, 10th Edition
+
+  - ISBN10: 1260236994 | ISBN13: 9781260236996
+  - Authors: Samuel Walker and Charles Katz
+
+The text above is required for a student to be successful in this course. You **must** have access to the current electronic textbook, *a hardcopy or previous edition will not be acceptable*. The publisher has made an electronic version of the book available. If you have difficulty obtaining the textbook for any reason, please reach out to me as soon as possible. There may also be additional readings as distributed through Blackboard. 
+
+Access the textbook, quizzes, and readings through Blackboard by clicking on the relevant links in the course. The first time you click on a textbook, quiz, or reading assignment, you will be taken to the publisher webpage to complete registration.
+
+# General Assignment Information
+
+This class will require you to complete significant work. As an overview, you will be required to attend and participate in our class meetings; take quizzes; read assigned chapters from the textbook; respond to discussions with a high-quality posting; complete two written essays; and there is a final exam. This syllabus has more detailed information on assignment types and expectations.
+
+<!-- If you signed up for a shortened summer course, there is more weekly work than would be expected in a full-semester course of the same type. You will be completing up to three weeks of work in any given week! Failure to complete all work **WILL REDUCE YOUR GRADE**. It is your responsibility to keep up with the workload. -->
+
+## Midterm and Final Essay Information
+
+This class has two required essays, a midterm and a final. Dates for all exams, essays, and assignments are listed within the class Blackboard page. 
+
+Essays are submitted through the Packback system, the same place that weekly discussion assignments are done. **There are no late submissions allowed for either of the two essays**. Failure to submit your essay on time will result in an automatic zero grade for that assignment, which will have a significantly negative impact on your overall grade.
+
+## Final Exam Information
+
+The final exam become available to take one week prior to its due date. Your final exam is on`r format(final_day, '%B %d, %Y')`. There can be no submissions of any assignment, essay, test, or anything else after **11:59 p.m. on `r format(final_day, '%B %d, %Y')`**. There will *absolutely* be no assignments, quizzes, or final exam accepted after that date and time. None. Add it to your calendar now. Failure to submit any assignment, quiz, or exam by that date and time will automatically be counted as a zero towards your final grade. I will accept no appeals on this, so please plan ahead.
+
+The final exam is electronically proctored. I strongly encourage you to use University of South Carolina technology (i.e., on-campus computers and WiFi) when completing the final exam and other course activities. I cannot and will not be responsible for claimed technology failures, and the campus technological facilities will help ensure you are able to complete your assignments without technical difficulties.
+
+### Required Textbook Assignments: **Smartbook and Weekly Quizzes**
+
+Chapter SmartBook activities are due on the stated due date listed in Blackboard. Clicking on the assignment will take you to the Connect external website, where you will complete the reading activity for each assigned chapter. These activities help students practice the concepts and objectives taught in the chapter readings and aid in preparing the student for the chapter assignments and exams.  You will continue to work through these activities until you have successfully completed each assignment.  Please note the amount of time to complete these activities varies by chapter.  If you have not read the chapter and become familiar with the content, these activities will take much more time than they are structured to take. There are no late submissions for Smartbook assignments. 
+
+**There is a Smartbook assignment due for every chapter in the book.** This means you will be completing multiple Smartbook assignments every week!
+
+If you are partially done with the assignment when the assignment closes, you will be given partial credit according to your progress within the assignment. **There are no late submissions allowed for Smartbook activities.** 
+
+Weekly quizzes and the final exam are likewise through the online portal. **There is a quiz for every chapter in the book**. This means you will be submitting multiple quizzes per week!
+
+Late weekly quizzes will be assessed a 10% (of the available points) deduction for each 24 hours it is late. In other words, a quiz submitted five days late would be assessed a 50% reduction in the total points available. A quiz submitted ten days or more late, therefore, will be worth zero points automatically.
+
+## Required Discussion & Essay Technology - **Packback Assignments**
+
+Participation is a requirement for this course, and the Packback Questions platform will be used for online discussion about class topics. Packback Questions is an online community where you can be fearlessly curious and ask open-ended questions to build on top of what we are covering in class and relate topics to real-world applications. There are no lates accepted in Packback. 
+
+### Packback Requirements
+
+**There will be two weekly deadlines for submissions.** You are required to pose a question by that week's Wednesday, and also to provide two responses to other students' questions by the end of the class week. In order to receive full credit, you should submit the following per each deadline period:
+
+
+-  You **MUST** access Packback assignments through Blackboard. If you do not (for example by logging into Packback directly) you will **not receive credit for your work.** This will be considered your responsibility, and the instructor will not retroactively count work that is not submitted properly for credit.
+-  Open-ended question every week with a minimum Curiosity Score of 80, worth 5 points of each assignment grade
+-  Responses every week with a minimum Curiosity Score of 80, worth 6 points of each assignment grade
+-  Half credit will be provided for questions and responses that do not meet the minimum curiosity score.
+
+There are **no late Packback assignments allowed**. The point of a discussion is to interact with the class - if you try to "go back" to a previous discussion, you will be talking to an empty room. I highly recommend you not leave these assignments until the last minute!
+
+### How to Register on Packback
+
+Note: Only access Packback through Blackboard in order to ensure your grades sync properly. Failure to do so will result in a zero for that assignment. The professor will not troubleshoot this for you.
+
+-  Click the first Packback assignment link within Blackboard to access the community
+-  Follow the instructions on your screen to finish your registration.
+-  In order for your grade to be visible in Blackboard, make sure to click each Packback assignment link as you post your Packback submissions.
+
+Packback may require a paid subscription. Refer to [www.packback.co/product/pricing](www.packback.co/product/pricing) for more information.
+
+### How to Get Help from the Packback Team
+
+If you have any questions or concerns about Packback throughout the semester, please read their FAQ at [help.packback.co](help.packback.co). If you need more help, contact their customer support team directly at help@packback.co. 
+
+For a brief introduction to Packback Questions and why we are using it in class, watch this video: [https://www.youtube.com/watch?v=OV7QmikrD68](https://www.youtube.com/watch?v=OV7QmikrD68)
+
+<!-- ## Required Podcast -->
+
+<!-- Listening to, considering, and responding to the issues posed in the *Serial* podcast are central tasks for this course. Feel free to use your preferred podcast platform. If you are having difficulty finding and listening to the podcast, please contact me immediately. Here are three examples of where to find the *Serial*, Season Three podcast episodes. -->
+
+<!-- -  Podcast homepage: [Serial Podcast, Season 3](https://serialpodcast.org/season-three/1/a-bar-fight-walks-into-the-justice-center)  -->
+<!-- -  Apple Podcasts: [Serial Podcast on Apple](https://podcasts.apple.com/us/podcast/serial/id917918570) -->
+<!-- -  Stitcher Podcasts: [Serial Podcast on Stitcher](https://www.stitcher.com/podcast/this-american-life/serial) -->
+<!-- -  Google Podcasts: [Stitcher Podcast on Google](https://podcasts.google.com/?feed=aHR0cDovL2ZlZWRzLnNlcmlhbHBvZGNhc3Qub3JnL3NlcmlhbHBvZGNhc3Q%3D) -->
+
+
+
+# Contacting the Instructor
+
+Normally, the fastest way to contact me is through the email above. I actively check and respond to emails throughout the day. I will always try to respond to your email within 72 business hours (i.e., Monday through Friday, exclusive of holidays). If you have a more urgent request, please note that within the subject line of your email.
+
+Be sure to set your Blackboard settings such that you are notified when course messages are sent. All communications between students and instructors are to be respectful in content and professional in tone. Nonprofessional communications will be responded to with a request to rewrite/rephrase according to these communication expectations. In the case of emails and Blackboard messages, this means:
+
+-  Using salutations (e.g., “Hello…”), closing statements (e.g., “Thank you for your attention to…”), and closings (e.g., “Best regards”). 
+-  Stating the purpose of the email and including background information to enable the instructor to understand and respond to the email.
+-  Using complete sentences and refraining from using profanity.
+
+# Technology Requirements
+
+All materials, links to articles, assignments, quizzes, and rubrics are located on the Blackboard site for the course. To participate in learning activities and complete assignments, you will need:
+
+-  Access to a working computer that has a current operating system with updates installed, plus speakers or headphones to hear lecture presentations (transcripts provided);
+-  Reliable Internet access and a USC email account;
+-  A current Internet browser that is compatible with Blackboard (Google Chrome is the recommended browser for Blackboard); 
+-  Microsoft Word as your word processing program; and
+-  Reliable data storage for your work, such as a USB drive or Office365 OneDrive cloud storage.
+
+If your computer does not have Microsoft Word, Office 365 ProPlus package is available to you free of charge and allows you to install Word, Excel, PowerPoint, Outlook, OneNote, Publisher, and Access on up to 5 PCs or Macs and Office apps on other mobile devices including tablets. Office 365 also includes unlimited cloud storage on OneDrive. To download Office 365 ProPlus, log into your student (University) email through a web browser, choose Settings (top right corner), and select software. If you have further questions or need help with the software, please contact the [Service Desk.](https://www.sc.edu/about/offices_and_divisions/university_technology_services/support/servicedesk.php)
+
+## Blackboard Information
+
+Minimum technical skills are needed in this course. All work in this course must be completed and submitted online through Blackboard. Therefore, you must have consistent and reliable access to a computer and the Internet. The minimum technical skills you have include the ability to:
+
+-  Organize and save electronic files;
+-  Use USC email and attached files;
+-  Check email and Blackboard daily;
+-  Download and upload documents;
+-  Locate information with a browser; and
+-  Use Blackboard.
+
+## Technical Support
+
+If you have problems with your computer, technology, IT-related questions, support, including Blackboard, please contact the Division of Information Technology (DoIT) Service Desk at (803) 777-1800 or submit an online request through the [Self-Service Portal](https://scprod.service-now.com/sp) or visit the [Carolina Tech Zone](https://sc.edu/about/offices_and_divisions/division_of_information_technology/end_user_services/available_technology_resources/carolina_tech_zone/). The Service Desk is open Monday – Friday from 8:00 AM – 6:00 PM (Eastern Time). If you are located in the Columbia, SC area, the Thomas Cooper Library at UofSC has computers for you to use in case you encounter computer issues/problems. If you are not located in the Columbia, SC area, most regional campuses and public libraries have computers for public use.
+
+# Class Schedule
+
+Students must read all assigned material prior to our class session.  Important: class readings are subject to change, contingent on mitigating circumstances and the progress we make as a class.  Students are encouraged to attend lectures and check the course Blackboard website for updates. Generally, this class runs on a Monday (start) to Sunday (end), but be sure to check the due dates every week carefully to ensure you are meeting assigned deadlines.
+
+Here is an overview calendar for the course. The semester is in light blue, meeting days are highlighted in darker blue. Final exam week is highlighted in green. If a date is red, that means no class. 
+
+```{r calendar, echo=F, eval=T, fig.cap="Calendar for CRJU 311: Policing",  warning=F, fig.width=11, fig.height=7}
+
+class_cal
+
+```
+
+
+
+This course is arranged into topics for each week, which correspond with our textbook chapters. Please see the Blackboard course for details and links for each week's activities. Note that the dates below mark the *start of the week*. 
+
+All assignments, instructions, and due dates are located in the class Blackboard. Follow those and you will always be caught up! Assignments that fall on big holiday breaks (i.e., Thanksgiving) have been moved to a later due date.
+
+<!-- ##  `r meeting_headers[1]` :  -->
+
+<!-- **Topics:** Class Introduction; Nature, Police & Society -->
+
+<!-- **Readings:** Familiarize yourself with online components and get registered! Read the Syllabus, Code of Conduct, Preface, Chapter 1 -->
+
+
+<!-- ##  `r meeting_headers[2]` :  -->
+
+<!-- **Topics:** The History of the American Police -->
+
+<!-- **Readings:** Chapter 2 -->
+
+
+<!-- ##  `r meeting_headers[3]` : -->
+
+<!-- **Topics:** The Contemporary Law Enforcement Industry -->
+
+<!-- **Readings:** Chapter 3 -->
+
+
+<!-- ##  `r meeting_headers[4]` :  -->
+
+<!-- **Topics:** Police Organizations -->
+
+<!-- **Readings:** Chapter 4 -->
+
+<!-- ##  `r meeting_headers[5]` : -->
+
+<!-- **Topics:** Police Officers 1: Recruitment and Training for a Changing Society -->
+
+<!-- **Readings:** Chapter 5 -->
+
+
+<!-- ##  `r meeting_headers[6]` : -->
+
+<!-- **Topics:** Police Officers 2: On the Job -->
+
+<!-- **Readings:** Chapter 6 -->
+
+
+<!-- ##  `r meeting_headers[7]` : -->
+
+<!-- **Topics:** Patrol: The Backbone of Policing -->
+
+<!-- **Readings:** Chapter 7 -->
+
+
+<!-- ##  `r meeting_headers[8]` : -->
+
+<!-- **Topics:** Peacekeeping and Order Maintenance -->
+
+<!-- **Readings:** Chapter 8 -->
+
+
+<!-- ##  `r meeting_headers[9]` : -->
+
+<!-- **Topics:** The Police and Crime -->
+
+<!-- **Readings:** Chapter 9 -->
+
+
+<!-- ##  `r meeting_headers[10]` : -->
+
+<!-- **Topics:** Advances in Police Strategy -->
+
+<!-- **Readings:** Chapter 10 -->
+
+<!-- ##  `r meeting_headers[11]` : -->
+
+<!-- **Topics:** Police Discretion -->
+
+<!-- **Readings:** Chapter 11 -->
+
+<!-- ##  `r meeting_headers[12]` : -->
+
+<!-- **Topics:** Legitimacy and Trust and Confidence in the Police -->
+
+<!-- **Readings:** Chapter 12 -->
+
+
+<!-- ##  `r meeting_headers[13]` : -->
+
+<!-- **Topics:** Police Corruption -->
+
+<!-- **Readings:** Chapter 13 -->
+
+<!-- ##  `r meeting_headers[14]` : -->
+
+<!-- **Topics:** Accountability of the Police -->
+
+<!-- **Readings:** Chapter 14 -->
+
+<!-- ##  `r meeting_headers[15]` : -->
+
+<!-- **Topics:** Crimes Against the Administration of Justice -->
+
+<!-- **Readings:** Chapter 15 - Note, you are still responsible for knowing this material for the final exam, even though there are no graded assignments this week. -->
+
+<!-- ##  `r meeting_headers[16]` : -->
+
+<!-- **Topics:** Organized Crime, Gangs, & Terrorism -->
+
+<!-- **Readings:** Chapter 16 -->
+
+<!-- <!-- ##  `r meeting_headers[17]` : --> -->
+
+**FINALS WEEK & FINAL EXAM** Your final exam is due **no later than 11:59 p.m. on `r format(final_day, '%B %d, %Y')`**. There will *absolutely* be no assignments, quizzes, or exams accepted after that date and time. None. Add it to your calendar now. Failure to submit any assignment, quiz, or exam by that date and time will automatically be counted as a zero towards your final grade. I will accept no appeals on this, so please plan ahead.
+
+**Final Exam:** Final Exam is available during finals week (`r format(exam_dates, '%B %d, %Y')`), and is due by 11:59 p.m. on **`r format(final_day, '%B %d, %Y')`**. This means you have approximately one week in which to complete the exam.
+
+**ALL ASSIGNMENTS AND FINAL EXAM due by 11:59PM on `r format(final_day, '%B %d, %Y')`**. Nothing will be accepted after that time and date!
+
+# Course Policies
+
+I will detail the various policies for this course below. These are very important to your success in this class, and you should be familiar with them!
+
+## Academic Honesty
+
+Academic honesty is expected, and dishonesty will not be tolerated. The University policy on academic dishonesty can be found on the university website. An act of academic dishonesty will result in a failing course grade and a recommendation of additional disciplinary action. The faculty has adopted guidelines concerning what constitutes a violation of ethical standards for work completed in this course. Any of these violations will be considered academic dishonesty and treated as such. These guidelines are in addition to any University-wide guidelines concerning academic dishonesty, which may be in effect. All course assignments will be scanned for plagiarism, and any misconduct will result in a failing grade for the course. 
+
+1.	__Cheating__: the giving or receiving of any unauthorized assistance on any academic work;
+2.	__Plagiarism__: presenting the language, structures or ideas of another person or persons as one’s own academic work;
+3.	__Falsification__: Any untrue statement, either oral or written, concerning one’s own academic work or the academic work of another student, or the unauthorized alteration of any academic record; and
+4.	__Original work & "Self Plagiarism"__: Unless specifically allowed by the instructor, all academic work undertaken in a course must be original (i.e., it must not have been submitted in a prior course or be submitted in a course being taken concurrently).
+
+## Respectful & Appropriate Class Conduct
+
+Public policy processes, including the criminal justice system, inherently center on topics and issues for which individuals hold strong opinions, based on their personal values, beliefs, and interests. As a result, this course will challenge students to not only acknowledge and respect perspectives that differ from their own, but may call on them to challenge their own opinions and beliefs, and “step into” another’s perspective to consider the strengths and limitations of their own argument. 
+
+In order to facilitate this process and ensure a socially, emotionally, and psychologically safe environment, **respectful behavior is the expectation, norm, and requirement in this class.** Arguments and ideas may (and are expected to) be challenged, but personal attacks, disrespectful behavior, and/or hateful attitudes towards people or any groups of people will not be tolerated.
+
+## Course Work
+
+This class will require you to complete significant work outside of class. As an overview, you will be required to attend and participate in class meetings; take quizzes; read assigned chapters from the textbook; listen to a podcast, and respond with a high-quality posting regarding that podcast episode(s); complete one essay; and there is a final exam.
+
+### Grading and Points Distribution
+
+This class has *approximately* 710 points available through quizzes, readings, discussions, final essay, and final exam:
+
+- Weekly quizzes - 150 points 
+- Smartbook readings - 150 points 
+- Packback discussions - 140 points 
+- Midterm Essay - 50 points 
+- Final Essay - 100 points 
+- Final Exam - 120 points
+
+Please keep in mind that these are approximations. If situations arise that require me to adjust these, I will communicate in class.
+
+### Weekly Quizzes
+
+Each week you are required to answer a short quiz. The questions in every quiz are drawn directly from that week’s readings. The questions are also very similar to the questions you will encounter in the final exam! If you are keeping up on your reading, they should not pose too much difficulty. The questions are randomly drawn from a large pool of questions, so each student will be presented with a different quiz. 
+
+### Discussion Postings
+
+Every week, you are required to participate in a discussion on the Packback course software (details above). You are required to respond to my starter question. You are also required to post your own question thread, as well provide two responses to other students' questions. Note - your question is due the *Wednesday* of the week, while your two responses are due the following *Sunday*.
+
+Some advice and rules: 
+
+(a)	Do not wait until the last day to make your postings. This requirement will ensure that you have plenty of response options over the weekend when it comes to posting a response. *Post early, post often*. Remember to post your question by Wednesday! This will ensure other students have plenty of options when deciding what to answer.
+
+(b)	When you post something on the discussion board, you should try to use class material, current events, and inject your personal opinion backed by evidence. A high-quality mandatory posting will be at least two paragraphs in length (but need not necessarily be more than two paragraphs) and will contain a cogent argument which responds directly to the question asked and does not contain spelling or grammatical errors. A high-quality posting in response to another students posting may be slightly shorter in length than the initial posting (but should be at least one full paragraph in length, or 4-5 sentences) and should still contain a cogent argument and correct spelling and grammar.
+
+(c)	Each of the posting assignments is worth up to 10 points – in other words, you could receive less than 10 points if your posting does not conform to the course criteria. 
+
+(d)	Although I want to use this portion of the class to foster a healthy and vigorous debate between students, I reserve the right to delete any posting I choose. I will delete a posting if it is unreasonably derogatory towards another student or violates university policy. Otherwise, the posting board will be fair game. If I delete your posting, you will not receive credit for it. In short, engage with each other, but please make every effort to be respectful.
+
+
+```{r remedy002, eval=FALSE, include=FALSE}
+
+# kbl(rubric,
+#     format = "latex",
+#     booktabs = TRUE,
+#     caption = "Discussion Grading Rubric") #%>%
+  #kable_styling(latex_options = "scale_down")
+
+```
+
+### Late Policy
+
+I do not accept late assignments of any kind. Missing submissions will be awarded zero points automatically. Perhaps the the most important point -- contact me beforehand if you are experiencing difficulties that will impact your ability to turn in work! Reaching out after the due date has passed is not helpful to you or me.
+
+## Grading Scheme 
+
+The course follows the university's grading scheme. Grades do not round up - you must clear the given percentages for each grade level. I would be delighted to be able to give every student an A. However, to achieve the highest grades, it is up to you to be consistent, motivated, and engaged. If you want an A, your best course of action: turn in every assignment on time, read all assigned materials, and show up to every class. 
+
+```{r remedy003, echo=FALSE}
+## for grading scheme
+
+grades <- read_csv(here("CRJU 311", "Summer 2023", "grading-scheme.csv"))
+
+kbl(grades, "latex")
+
+```
+
+### Extra Credit
+
+I do not plan on offering any extra credit for this course. At times, events occur that may change my mind.
+
+### Contested Grades
+
+If you would like an assignment to be regraded, please email me in advance of our meeting. In this email, please state clearly what the issue is and the reasons that you feel justify an adjustment to your grade. Once I receive your email, we will schedule an in-person meeting to discuss your request. Please be aware, if I agree to regrade, the entire assignment will be evaluated again. This means that your grade can be lowered as well as raised. The new grade will be final. 
+
+If you just have concerns about a certain test item, there is no need to request a full regrade. Simply email me and we will discuss, or bring it up in class. Note that no regrading will be done for the final essay, as the semester will have ended.
+
+### Professors HATE this one simple trick: Grade Grubbing, Grade Lawyering, Grade Begging
+
+["Grade grubbing" is the act of trying to get a higher grade on an assignment](https://www.science.org/content/article/confessions-former-grade-grubber) or test by pestering the teacher or using dishonest methods. This often involves repeatedly asking the teacher for extra credit opportunities or trying to convince the teacher to change a grade. Students may engage in grade grubbing because they are afraid of getting a low grade or because they are overly focused on getting good grades.
+
+[You should avoid grade grubbing at all costs](https://marktomforde.com/academic/undergraduates/GradeGrubbing.html). It will not help you in this course. 
+
+Grade grubbing is not a healthy or effective way to improve grades. It can be stressful and time-consuming, and it often leads to frustration and disappointment. Furthermore, it is dishonest and can damage the relationship between the student and the teacher. Instead of grade grubbing, students should focus on understanding the material and doing their best on each assignment. This will not only help them to get better grades, but it will also help them to learn and grow as individuals.
+
+## Attendance Policy
+
+```{r, include=FALSE}
+# I like to put in a cautionary tale about the importance of attending classes. This will approximate the underlying data.
+# Data are clearly fake, though.
+
+tibble(perattend = rbnorm(800, 81.84, 22.74, 0, 100),
+       grade = 10.19 + .78*perattend + rnorm(800, 0, 20),
+       rgrade = case_when(
+         grade < 0 ~ 0,
+         grade > 100 ~ 100,
+         TRUE ~ grade
+       )) -> Attend
+
+options(scipen=999)
+M1 <- lm(rgrade ~ perattend, Attend)
+M2 <- lm(rgrade ~ perattend, data=subset(Attend, perattend >= 75))
+
+M1df <- broom::tidy(M1)
+M2df <- broom::tidy(M2)
+#library(ggplot2)
+#library(kfigr)
+```
+
+You should plan to be active within the Blackboard class portal at least five days a week for a considerable amount of time. Failure to regularly participate in the class discussion will negatively affect your grade. 
+
+Paricipation in online courses, and attendance during in-person courses, is the bare minimum expectation. Consider the following, courtesy [Steven Miller](https://github.com/svmiller).
+
+A simple linear regression of a student's final grade on percentage of classes attended for the semester suggests an increase of one percent in attendance for the semester leads to an estimated increase of `r round(M1$coefficients[2], 3)` in the student's final grade. Whereas one missed classes constitutes about a five-percent decrease in percentage attendance for the semester, one missed class means an estimated decrease of `r round(M1$coefficients[2], 3)*5` in the overall grade. The effect of attendance on the final grade for the class is precise (*t* = `r round(M1df$statistic[2], 3)`) and the likelihood that there is no actual relationship between attendance and final grade for the semester is almost zero. This simple linear model with just one predictor (attendance) provides a good fit as well (R$^2$ = `r round(summary(M1)$r.squared, 3)`). See Figure 2 in this document.
+
+```{r attendplot, echo = FALSE, results="asis", cache=FALSE, fig.cap="A Scatterplot of the Relationship between Class Attendance and Final Grade", fig.height=4, fig.pos="H"}
+Graph <- ggplot(Attend, aes(x = perattend, y = rgrade))
+Graph + geom_point() + labs(x="Percent Attendance in Class", y="Final Grade in Class (0-100)") + 
+                              geom_smooth(method=lm)
+```
+
+The findings hold even when I subset the data to cases where attendance is greater than 75% (i.e. roughly the threshold below which I deduct all participation points). Students who just meet the threshold for full participation points nevertheless get an estimated decrease of `r round(M2$coefficients[2], 3)*5` in their overall grade for each missed class. This effect is also precise (*t* = `r round(M2df$statistic[2], 3)`). Put another way, we would have observed this effect in my data if there were no *true* effect of attendance on grades about `r round(summary(M2)$coefficients[2,4]*100000)` times in 100,000 "trials" (i.e. *p* = `r round(summary(M2)$coefficients[2,4], 5)`), on average. That probability is effectively zero. *Attend class if you have an in-person class. Participate in the online portal if you have an online course. Your grade depends on it*.
+
+## Instructor Expectations
+
+I commit to being your mentor and facilitator of the educational experience, and to the following expectations for this course:
+
+- I will design the course to include readings materials and assignments that will challenge students and will provide them with opportunities to learn and practice course content.
+- I will respond to emails in a timely fashion. “Timely” in this instance means within 24-72 hours, not including weekends and holidays. *Normally*, I am quite a bit faster, but like everyone else, life sometimes intervenes. If you do not hear from me within 72 hours, please email again.
+- I will be available for individual consultation via virtual office hours, email, or phone. Students will not be required to come to campus in order to meet with me, nor does it have to be during 'bankers hours.'
+- I will provide feedback on assignments in a timely manner.
+- I will ensure and enforce a respectful atmosphere.
+- I will maintain a classroom that is open to questions, discussion, and ethical disagreement.
+- I will follow all [official University of South Carolina policies](https://academicbulletins.sc.edu/undergraduate/policies-regulations/undergraduate-academic-regulations/#text) regarding conduct in the classroom, incompletes, and accommodations. Accommodations will be considered on an individual basis and only with required documentation. See the **University Policies** section at the end of this syllabus for more information and resources.
+
+## Student Expectations
+
+Though there is some built in flexibility, in that you are able to complete quizzes within a module rather than a specific date, can turn in the final essay before finals week, and have about a week in which to complete the final exam, this course does have a structure and timeline, including due dates for course assignments. As such, the following is expected of all students in this class:
+
+- Students will log in to the course three times each week.
+- Students will complete all assignments on time.
+- Students may be expected to work with classmates; however, students are not expected to necessarily interact with their classmates in person. A good alternative to meeting in person would be online video conferencing, which allows students to find a time to meet that works best for their schedule. Depending on the assignment, students can also choose to interact with their classmates with whatever technology they are most comfortable with.
+- To do well, students must be self-motivated, organized, and willing to stay on top of their schedule. Students should take control of their learning while in this course.
+- Students will regularly check course announcements. The *Announcements* area is the instructor’s official means of communication when distributing information to the entire class.
+- Students will update their Blackboard settings to ensure they receive timely notifications from the course.
+- If students have any questions, are struggling with course materials, or need further assistance from their professor, they will take the initiative to contact their professor via the Inbox feature in Blackboard or via email. Email is not perfect; sometimes, messages  are lost before they are read. If you do not hear back from your professor within 72 hours after sending a message, please contact me again.
+- Students will engage with the course, students, and the professor in a respectful and professional manner at all times.
+
+## Copyright/Fair Use
+
+I will cite and/or reference any materials that I use in this course that I do not create. You, as students, are expected to not distribute any of these materials, resources, quizzes, tests, homework assignments, etc. (whether graded or ungraded).
+
+
+# University Policies
+
+It is my intent that students from all backgrounds and perspectives be well served by this course, that students’ learning needs be addressed both in and out of class,  that the students bring valuable, diverse perspectives to this class, and every member of the class should be viewed as a potential resource, strength, and benefit. It is my intent to present materials and activities that are respectful of professional status, class, veteran status, pregnancy status, gender, sexuality, disability, age, socioeconomic status, ethnicity, race, and culture. Your suggestions are encouraged and appreciated. Please let me know ways to improve the effectiveness of the course for you personally or for other students or student groups. In addition, if any of our class meetings conflict with your religious events, please let me know so that we can make arrangements for you. 
+
+The following resources and statements are drawn directly from the University of South Carolina policies, values, and mission. If you have questions or concerns not answered below, please contact me directly so we can work together to answer and address them.
+
+*Accommodation of Sincerely Held Beliefs*:  I will work with students who require schedule changes due to religious or other significant obligations. I will not consider any requests based on course content. No other area of study touches on more sensitive topics than the broad category of "public policy" (and at times disturbing forms of human misbehavior such as criminal law). Policy researchers must read about, talk about, and listen to information relating to very difficult subjects. Sometimes case descriptions can be quite graphic. Students are required to attend all classes and to read all the assignments. All assignments and lectures are related to our subject matter.
+
+*Veterans and Military Services*. If you are a student veteran or military services member, the University of South Carolina  has a Veterans and Military Services Center, located at 901 Sumter Street, Suite 105. Hours: M-F 0830a-1700 hours. Please visit their website for more information about what support they offer, a list of ongoing events, and links to outside resources: [Veterans and Military Services](https://sc.edu/about/offices_and_divisions/veterans_and_military_services/index.php). Please also let me know if you need any additional support in this class for any reason.
+
+*Diversity and Inclusion*:  The university is committed to a campus environment that is inclusive, safe, and respectful for all persons, and one that fully embraces the Carolinian Creed. To that end, all course activities will be conducted in an atmosphere of friendly participation and interaction among colleagues, recognizing and appreciating the unique experiences, background, and point of view each student brings. You are expected at all times to apply the highest academic standards to this course and to treat others with dignity and respect.
+	
+*Accessibility, Disability, and Triggers*:  I am committed to ensuring course accessibility for all students. If you have a documented disability and expect reasonable accommodation to complete course requirements, please notify me at least one week before accommodation is needed. Please also provide [SDRC](https://sc.edu/about/offices_and_divisions/student_disability_resource_center/) documentation to me before requesting accommodation. Likewise, if you are aware of cognitive or emotional triggers that could disrupt your intellectual or mental health, please let me know so that I can be aware in terms of course content.
+
+*Diversity, Ethics, and the Carolinian Creed*:  This course works to foster a climate free of harassment and discrimination, and it values the contributions of all forms of diversity. The decision to enter university and pursue advanced study is a choice that entails commitment to personal ethics expressed in the [Carolinian Creed](www.sa.sc.edu/creed): “I will discourage bigotry, while striving to learn from differences in people, ideas and opinions.” Likewise, the [Student Code of Conduct STAF 6.26](http://www.sc.edu/policies/ppm/staf626.pdf) stresses, “The University of South Carolina strives to maintain an educational community that fosters the development of students who are ethical, civil and responsible persons.”
+
+*Title IX and Gendered Pronouns*:  This course affirms equality and respect for all gendered identities and expressions. Please don’t hesitate to correct me regarding your preferred gender pronoun and/or name if different from what is indicated on the official class roster. Likewise, I am committed to nurturing an environment free from discrimination and harassment. Consistent with Title IX policy, please be aware that I as a responsible employee am obligated to report information that you provide to me about a situation involving sexual harassment or assault. 
+
+*Values [credit to Dr. David Moscowitz]*:  Two core values, inquiry and civility, govern our class. Inquiry demands that we all cultivate an open forum for exchange and substantiation of ideas. Strive to be creative, to take risks, and to challenge our conventional wisdom when you see the opportunity. Civility supports our inquiry by demanding ultimate respect for the voice, rights, and safety of others. Threatening or disruptive conduct may result in course and/or university dismissal. Civility also presumes basic courtesy: please be well rested, on time, and prepared for class, and silencing all personal electronic devices. My perspective is that we never cease being students of this world, so I believe that attentive, reflective people always have something to learn from others. Good discussions can be energetic and passionate but are neither abusive nor offensive. Vibrant, vigorous inquiry derives from discussions that:
+
+-  challenge, defend, and apply different ideas, theories, perspectives, and skills, 
+-  extend a body of knowledge into different arenas and applications, and 
+-  result in a synergy that compels us to seek resolution to these discussions.
+
+# Academic Success
+
+(@) Disability Services
+
+[Student Disability Resource Center](http://www.sa.sc.edu/sds/): The Student Disability Resource Center (SDRC) empowers students to manage challenges and limitations imposed by disabilities. Students with disabilities are encouraged to contact me to discuss the logistics of any accommodations needed to fulfill course requirements (within the first week of the semester). In order to receive reasonable accommodations from me, you must be registered with the Student Disability Resource Center (1705 College Street, Close-Hipp Suite 102, Columbia, SC 29208, 803-777-6142). Any student with a documented disability should contact the SDRC to make arrangements for appropriate accommodations.
+
+(@) Student Success Center
+
+In partnership with UofSC faculty, the Student Success Center (SSC) offers a number of programs to assist you in better understanding your course material and to aid you on your path to success. SSC programs are facilitated by professional staff, graduate students, and trained undergraduate peer leaders who have previously excelled in their courses. Resources available to you in this course may include:
+
+-  Peer Tutoring: You can make a one-on-one appointment with a [Peer Tutor](www.sc.edu/success).  Drop-in Tutoring and Online Tutoring may also be available for this course. Visit their website for a full schedule of times, locations, and courses.
+-  Supplemental Instruction (SI): SI Leaders are assigned to specific sections of courses and hold three weekly study sessions. Sessions focus on the most difficult content being covered in class. The SI Session schedule is posted through the SSC website each week and will also be communicated in class by the SI Leader.
+-  Peer Writing: Improve your college-level writing skills by bringing writing assignments from any of your classes to a Peer Writing Tutor. Similar to Tutoring, you can visit the website to make an appointment, and to view the full schedule of available drop-in hours and locations.
+-  Success Consultations: In Success Consultations, SSC staff assist you in developing study skills, setting goals, and connecting to a variety of campus resources. Throughout the semester, I may communicate with the Student Success Center regarding your progress throughout the semester, which indicates your instructor is concerned about your progress in this course. If contacted by the Student Success Center, please schedule a Success Consultation right away. Referrals are not punitive, and any information shared by your professor is confidential and subject to FERPA. Student Success Center services are offered to all UofSC undergraduates at no additional cost. Please call 803-777-1000, visit [www.sc.edu/success](www.sc.edu/success), or come to the Student Success Center in the Thomas Cooper Library (Mezzanine Level) to check schedules and make appointments.
+
+SSC services are offered to all UofSC undergraduates at no additional cost. You are invited to call the Student Success Hotline at (803) 777-1000, [visit the SSC website](www.sc.edu/success), or stop by the SSC in the Thomas Cooper Library on the Mezzanine Level to check schedules and make appointments. 
+
+(@) Writing Center
+
+[Writing Center](http://artsandsciences.sc.edu/write/university-writing-center)
+This course has many of writing assignments. The University Writing Center is an important resource you should use! It's open to help any UofSC student needing assistance with a writing project at any stage of development. The main Writing Center is in Byrnes 703.
+
+(@) University Library Resources
+
+[University Libraries Resources](sc.edu/libraries)
+
+-  University Libraries has access to books, articles, subject specific resources, citation help, and more. If you are not sure where to start, please Ask a Librarian!  Assistance is available at [sc.edu/libraries/ask](sc.edu/libraries/ask).  
+-   Remember that if you use anything that is not your own writing or media (quotes from books, articles, interviews, websites, movies – everything) you must cite the source in MLA, APA, or Chicago citation styles (or other appropriate and approved) format.
+
+(@) Blackboard and Technology
+
+[Blackboard and Technology](https://sc.edu/about/offices_and_divisions/division_of_information_technology/end_user_services/available_technology_resources/)
+As a student in this course, you have access to support from the Division of Information Technology (DoIT) for Blackboard and computer issues. The service desk can be reached at 803-777-1800.
+
+(@) Counseling Services
+
+[Counseling Services](https://sc.edu/about/offices_and_divisions/student_health_services/medical-services/counseling-and-psychiatry/index.php): The University offers counseling and crisis services as well as outreach services, self-help, and frequently asked questions.
+
+(@) Mental Health
+
+If stress is impacting you or getting in the way of your ability to do your schoolwork, maintain relationships, eat, sleep, or enjoy yourself, please reach out to any of our mental health resources. Counseling & Psychiatry offers individual and group counseling and psychiatric services. You can schedule an appointment at (803) 777-5223 or on MyHealthSpace. You can also call after-hours for crisis counseling. Wellness Coaching can help you improve in areas related to emotional and physical wellbeing, such as sleep, resiliency, balanced eating and more. Wellness Coaching appointments can be made by calling 803-777-6518 or on MyHealthSpace. You can also access virtual self-help modules via [Therapy Assistance Online (TAO)](https://us.taoconnect.org/register). Most of these services are offered at no cost as they are covered by the University Health Services tuition fee. For all available mental health resources, check out [University Health Services Mental Health](https://sc.edu/about/offices_and_divisions/health_services/mental-health/index.php).
+
+(@) Interpersonal Violence
+
+Interpersonal violence - including sexual harassment, relationship violence, sexual assault, and stalking - is prohibited at UofSC. Faculty, staff, and administrators encourage anyone experiencing interpersonal violence to speak with someone, so they can get the necessary support and UofSC can respond appropriately. If you or someone you know has been or is currently impacted by interpersonal violence, you can find the appropriate resources at the [Stop Interpersonal Violence](http://www.sc.edu/stopsexualassault) website. 
+
+As faculty, I must report all incidents of interpersonal violence and sexual misconduct, and thus cannot guarantee confidentiality. Please know that you can [seek confidential resources](https://sc.edu/about/initiatives/safety/stop_sexual_assault/contacts/index.php). If you want to make a formal report, [you can report here](https://cm.maxient.com/reportingform.php?UnivofSouthCarolinaEOP&layout_id=6) or contact the institution’s Title IX Coordinator, or one of the Deputy Title IX Coordinators listed on the Stop Sexual Assault website. You can also file a police report by contacting USC Police at 803-777-4215. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
