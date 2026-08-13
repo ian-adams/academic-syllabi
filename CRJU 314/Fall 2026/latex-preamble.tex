@@ -1,0 +1,46 @@
+% ---------------------------------------------------------------------------
+% LaTeX-only preamble for CRJU 314 Fall 2026.
+%
+% This lives in its own file, rather than in the .Rmd's `header-includes`,
+% because that YAML field is global: pandoc would inject these LaTeX commands
+% into the <head> of the HTML build as literal text. Scoping it to the PDF
+% format under `includes: in_header:` keeps the HTML clean.
+% ---------------------------------------------------------------------------
+
+\linespread{1.05}
+
+% --- Pandoc 3.x / stevetemplates compatibility shims ------------------------
+% These let the calendar figure compile. Remove them only if stevetemplates is
+% updated for pandoc 3.x; without them the render dies.
+%
+% Nothing below may assume the template's own graphics block ran. That block is
+% wrapped in $if(graphics)$, which pandoc sets only when it sees an Image node
+% -- and knitr emits the calendar as raw LaTeX once fig.alt is set, so the
+% variable is false and graphicx never gets loaded. Load it ourselves.
+\usepackage{graphicx}
+
+% 1. Pandoc 3.x wraps images in \pandocbounded, which the template never
+%    defines. Define it, and have it fit oversized images to the line.
+\newsavebox\pandocbox
+\providecommand{\pandocbounded}[1]{\sbox\pandocbox{#1}\ifdim\wd\pandocbox>\linewidth\resizebox{\linewidth}{!}{\usebox\pandocbox}\else\usebox\pandocbox\fi}
+
+% 2. Swallow pandoc's "alt" key, which graphicx does not accept. The alt text
+%    is still written into the HTML build, where it actually reaches a reader.
+\makeatletter
+\define@key{Gin}{alt}{}
+\makeatother
+
+% 3. WHEN the template's graphics block does run, it redefines \includegraphics
+%    to accept NO optional argument, which pandoc's [keepaspectratio,alt={...}]
+%    then breaks. Restore the real graphicx version at \begin{document}, after
+%    every preamble ordering question has resolved itself. Guarded, so this is
+%    a no-op when the template never defined \Oldincludegraphics.
+\AtBeginDocument{%
+  \ifdefined\Oldincludegraphics\let\includegraphics\Oldincludegraphics\fi}
+
+% --- Accessibility ----------------------------------------------------------
+% Declare the document language in the PDF catalog (/Lang). Screen readers use
+% it to pick pronunciation rules, and Blackboard Ally checks for it. This does
+% NOT make the PDF *tagged* -- xelatex cannot do that. For a genuinely
+% accessible version, use the HTML build and upload that.
+\hypersetup{pdflang=en-US}

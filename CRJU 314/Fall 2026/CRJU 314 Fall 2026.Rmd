@@ -1,0 +1,1029 @@
+---
+output:
+  stevetemplates::syllabus:
+    latex_engine: xelatex
+    dev: cairo_pdf
+    includes:
+      in_header: latex-preamble.tex
+  html_document:
+    # theme/highlight/toc_float are deliberately OFF. Each of them injects
+    # inline JavaScript (Bootstrap, jQuery, jQuery UI), and Blackboard's
+    # content scanner rejects uploaded HTML containing inline <script> as a
+    # possible XSS vector. This build must stay script-free to be uploadable.
+    # Styling comes from syllabus.css; the TOC renders as a static list.
+    theme: null
+    highlight: null
+    toc: true
+    toc_depth: 2
+    self_contained: true
+    # No math in this document. Dropping MathJax removes the only external
+    # request in the file, so the upload is genuinely self-contained.
+    mathjax: null
+    df_print: kable
+    fig_width: 11
+    fig_height: 7
+    css: syllabus.css
+  word_document:
+    # Fallback for Blackboard installs whose server-side policy blocks .html
+    # uploads outright. Word maps our #/## headings to real Heading 1/2 styles
+    # and our tables to real Word tables, which is what Ally scores on.
+    toc: true
+    toc_depth: 2
+    fig_width: 9
+    fig_height: 5.7
+    df_print: kable
+lang: en-US
+geometry: margin=1in
+
+title: "CRJU 314: Criminal Law"
+author: Ian T. Adams
+date: "Fall 2026"
+
+email: "ian.adams@sc.edu"
+web: "ianadamsresearch.com"
+officehours: "By request, via email"
+office: "Currell 114"
+classroom: "Online (Blackboard)"
+classhours: "Asynchronous"
+
+fontfamily: mathpazo
+fontsize: 11pt
+---
+<!-- CCCCCCCCnncdxxxxxxx -->
+<!-- Fun fact: my cat added this comment as she walked over the keyboard while I was working on this template. -->
+<!-- I'm going to keep it going forward. Long live Queen Bea. -->
+
+<!-- ==================================================================== -->
+<!-- FALL 2026 REBUILD NOTES                                              -->
+<!--                                                                      -->
+<!-- 1. New textbook: Lippman, Contemporary Criminal Law (SAGE Vantage).  -->
+<!--    Replaces Garland, Criminal Law for the CJ Professional (5e).      -->
+<!-- 2. Packback and the Serial podcast are DROPPED for Fall 2026.        -->
+<!-- 3. Grading weights are COMPUTED from the Vantage assignment export,  -->
+<!--    not hand-typed. Re-export from Vantage and re-knit to update.     -->
+<!-- 4. Structure follows the CTE Online Course Syllabus Template         -->
+<!--    (rev. June 6, 2026) and ACAF 2.03 required components.            -->
+<!-- 5. Confirmed 13 Aug 2026: no Carolina Core designation, no prereqs.  -->
+<!-- ==================================================================== -->
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=F,
+                      fig.path = 'figs/',
+                      cache.path='cache/',
+                      warning=F,
+                      message=F)
+
+knitr::opts_chunk$set(
+                  fig.process = function(x) {
+                      x2 = sub('-\\d+([.][a-z]+)$', '\\1', x)
+                      if (file.rename(x, x2)) x2 else x
+                      }
+                  )
+
+advdate <- function(obj, adv) {
+ tmon <- obj + 7*(adv-1)
+ tfri <- obj + 4 + 7*(adv-1)
+ tmon <- format(tmon, format="%m/%d")
+ tfri <- format(tfri, format="%m/%d")
+ zadv <- sprintf("%02d", adv)
+ tmp <- paste("Week ",zadv,sep='',", ", tmon," - ",tfri)
+ return(tmp)
+}
+
+options(scipen=999)
+library(tidyverse)
+library(lubridate)
+library(here)
+library(kableExtra)
+
+# ---------------------------------------------------------------------
+# KEY SEMESTER DATES, Fall 2026 (from the USC Academic Calendar)
+# ---------------------------------------------------------------------
+
+classes_begin  <- mdy(08182026)   # Tuesday
+drop_no_w      <- mdy(08242026)   # Monday, last day to drop w/o "W"
+ia_optout      <- mdy(09012026)   # Tuesday, Inclusive Access opt-in/out deadline
+labor_day      <- mdy(09072026)   # Monday
+midpoint       <- mdy(10122026)   # Monday
+fall_break     <- seq(mdy(10152026), mdy(10162026), by = 1)   # Thu-Fri
+election_day   <- mdy(11032026)   # Tuesday
+drop_no_wf     <- mdy(11042026)   # Wednesday, last day to drop w/o "WF"
+thanksgiving   <- seq(mdy(11222026), mdy(11292026), by = 1)   # Sun-Sun
+survey_week    <- seq(mdy(11282026), mdy(12042026), by = 1)
+last_class_day <- mdy(12042026)   # Friday
+exam_dates     <- seq(mdy(12072026), mdy(12142026), by = 1)   # Mon-Mon
+
+# Final exam for THIS course. The Registrar assigns no slot to an asynchronous
+# section, so per CTE guidance the instructor sets it and states it here.
+# Single morning window on the first day of the exam period, with a timer.
+final_day       <- mdy(12072026)              # Monday
+final_open_dt   <- ymd_hm("2026-12-07 08:00")
+final_close_dt  <- ymd_hm("2026-12-07 11:59")
+final_minutes   <- 120                        # timer, once you begin
+final_questions <- 120
+final_per_q     <- 5                          # points per question, set in Blackboard
+final_points    <- final_questions * final_per_q
+
+# Latest possible start that still yields the full timer.
+latest_start <- final_close_dt - minutes(final_minutes)
+
+fmt_time <- function(x) {
+  s <- format(x, "%I:%M %p")
+  s <- sub("^0", "", s)
+  s <- sub("AM", "a.m.", s)
+  s <- sub("PM", "p.m.", s)
+  s
+}
+
+# Dates without a zero-padded day ("December 7", not "December 07").
+fmt_date <- function(x, fmt = "%B %d") sub(" 0", " ", format(x, fmt))
+
+semester_dates <- seq(classes_begin, last_class_day, by = 1)
+not_here_dates <- c(labor_day, fall_break, election_day, thanksgiving)
+
+# ---------------------------------------------------------------------
+# VANTAGE ASSIGNMENT EXPORT
+# Everything below is derived from the publisher export so that the
+# syllabus and the live course cannot drift apart. Re-export from Vantage,
+# drop the file in this folder, update the filename here, and re-knit.
+# ---------------------------------------------------------------------
+
+vantage_file <- here("CRJU 314", "Fall 2026",
+                     "Assignment Export_ADAMSJ-1935_8-13-2026.csv")
+
+vantage_raw <- read_csv(vantage_file) %>%
+  rename(name    = `Assignment Name`,
+         due_raw = `Due Date`,
+         points  = `Number of Points`,
+         type    = `Assignment Type`,
+         link    = `LMS Link`) %>%
+  mutate(due_date = as_date(mdy_hm(due_raw)))
+
+# The final exam is a Blackboard item and is NOT part of the Vantage export.
+# Earlier exports carried a stray "Final" placeholder row (150 pts, dated
+# 12/27); current ones do not. Drop it if it reappears, so it can never be
+# double-counted against final_points, which is set at the top of this chunk.
+vantage <- vantage_raw %>%
+  filter(!(str_detect(link, "Blackboard") |
+           str_to_lower(str_trim(name)) == "final"))
+
+if (nrow(vantage) < nrow(vantage_raw)) {
+  message("Dropped ", nrow(vantage_raw) - nrow(vantage),
+          " placeholder final-exam row(s) from the export; the final is ",
+          "defined in this chunk instead.")
+}
+
+# ---------------------------------------------------------------------
+# THANKSGIVING RESTRUCTURE (applied in Vantage 13 Aug 2026)
+#
+# The original build had Ch. 14 due 11/22 and Ch. 15 + Ch. 16 both due 11/29,
+# which put two chapters entirely inside Thanksgiving recess (Nov 23-29) and
+# left the final week of classes empty. Fixed in Vantage by moving Ch. 15 back
+# to join Ch. 14, and Ch. 16 forward into the last week of classes:
+#
+#   Week 14  Nov 16-22     Ch. 14 + Ch. 15  (99 pts; the two lightest chapters,
+#                                            comparable to Week 1's 96)
+#   Week 15  Nov 23-29     RECESS, nothing due
+#   Week 16  Nov 30-Dec 4  Ch. 16 (47 pts), due FRIDAY Dec. 4
+#
+# Ch. 16 is due Friday rather than Sunday on purpose: Sunday Dec. 6 is the
+# night before an 8:00 a.m. final. Friday leaves the weekend and reading day
+# free for review, and keeps margin on "nothing due after the final."
+#
+# All of this now lives in the export, so the dates below are DERIVED, not
+# hand-entered. The invariant checks further down enforce the design.
+# ---------------------------------------------------------------------
+
+week_dues_csv <- vantage %>%
+  distinct(due_date) %>%
+  arrange(due_date) %>%
+  pull(due_date)
+
+# Weeks 1-14 each carry a deadline. Week 15 is recess and carries none, so the
+# last deadline in the export belongs to Week 16.
+week_dues <- head(week_dues_csv, -1)
+ch16_due  <- tail(week_dues_csv, 1)
+
+n_weeks <- length(week_dues)
+
+# Week 1 starts the first day of class; every other week starts the Monday
+# after the previous deadline.
+week_starts <- c(classes_begin, head(week_dues, -1) + 1)
+
+wk <- paste0("Week ", seq_len(n_weeks), ": ",
+             fmt_date(week_starts), " -- ", fmt_date(week_dues))
+
+due_str <- fmt_date(week_dues, "%A, %B %d")
+
+# Every date on which something is due, for the calendar fill.
+all_dues <- week_dues_csv
+
+# ---- Invariant checks ------------------------------------------------
+# These encode the schedule design. If a future Vantage edit breaks one of
+# them, the knit stops rather than quietly shipping a wrong syllabus.
+recess <- seq(mdy(11232026), mdy(11292026), by = 1)
+
+stopifnot(
+  # 14 weekly deadlines + Ch. 16 = 15 distinct due dates
+  length(week_dues_csv) == 15,
+  # Thanksgiving recess is completely clear
+  !any(week_dues_csv %in% recess),
+  # nothing is due on or after the final exam
+  all(week_dues_csv < final_day),
+  # the last coursework deadline is the last day of classes
+  ch16_due == last_class_day)
+
+message("Schedule OK: ", length(week_dues_csv), " deadlines, ",
+        "recess (Nov 23-29) clear, last coursework due ",
+        fmt_date(ch16_due), ", final ", fmt_date(final_day), ".")
+
+# ---------------------------------------------------------------------
+# GRADING WEIGHTS, computed from the export
+# Four categories, mapped onto Vantage's own structure:
+#   - Chapter Learning Activities = everything "Assigned for Completion"
+#   - Knowledge Checks            = graded, unlimited attempts
+#   - Chapter Quizzes             = graded, single attempt
+#   - Final Exam                  = Blackboard, single attempt
+# ---------------------------------------------------------------------
+
+weights <- vantage %>%
+  mutate(Category = case_when(
+    str_detect(name, "Quiz")            ~ "Chapter Quizzes",
+    str_detect(name, "Knowledge Check") ~ "Knowledge Checks",
+    TRUE                                ~ "Chapter Learning Activities")) %>%
+  group_by(Category) %>%
+  summarise(points = sum(points), .groups = "drop") %>%
+  # The final exam is not in the Vantage export, so add it from the values
+  # set at the top of this chunk (120 questions x 5 points, per Blackboard).
+  bind_rows(tibble(Category = "Final Exam", points = final_points)) %>%
+  mutate(Weight = round(100 * points / sum(points)),
+         Category = fct_relevel(Category,
+                                "Chapter Learning Activities",
+                                "Knowledge Checks",
+                                "Chapter Quizzes",
+                                "Final Exam")) %>%
+  arrange(Category)
+
+# Sanity check: rounded weights must still total 100.
+stopifnot(sum(weights$Weight) == 100)
+
+weights_tbl <- weights %>%
+  transmute(Category = as.character(Category),
+            `Percent of Final Grade` = paste0(Weight, "%")) %>%
+  bind_rows(tibble(Category = "Total",
+                   `Percent of Final Grade` = "100%"))
+
+grades <- read_csv(here("CRJU 314", "Fall 2026", "grading-scheme.csv"))
+
+# ---------------------------------------------------------------------
+# Output-format switches. Three targets: "latex" (PDF), "html4" (web),
+# "docx" (Word). Raw LaTeX and raw HTML blocks are each dropped by the
+# writers they do not belong to, but Word gets NEITHER -- so anything
+# written as a raw block needs a markdown fallback guarded by is_docx.
+# ---------------------------------------------------------------------
+is_docx <- isTRUE(knitr::pandoc_to("docx"))
+
+# Tables: LaTeX for the PDF, real <table> markup for the web, and plain
+# markdown for Word (which pandoc turns into a real Word table -- kbl's
+# latex/html output would come through as literal garbage).
+show_tbl <- function(x, caption) {
+  if (is_docx) return(knitr::kable(x, format = "pipe", caption = caption))
+  k <- kbl(x, if (knitr::is_latex_output()) "latex" else "html",
+           booktabs = TRUE, caption = caption)
+  if (knitr::is_latex_output()) {
+    kable_styling(k, latex_options = "hold_position")
+  } else {
+    kable_styling(k, bootstrap_options = c("striped", "bordered"),
+                  full_width = FALSE, position = "left")
+  }
+}
+
+# ---------------------------------------------------------------------
+# SEMESTER CALENDAR
+# Source: http://svmiller.com/blog/2020/08/a-ggplot-calendar-for-your-semester/
+# ---------------------------------------------------------------------
+
+wom <- function(date) {
+    first <- wday(as.Date(paste(year(date),month(date),1,sep="-")))
+    return((mday(date)+(first-2)) %/% 7+1)
+  }
+
+tibble(date = seq(mdy(08012026), mdy(12312026), by=1))  %>%
+  mutate(mon = lubridate::month(date, label=T, abbr=F),
+         wkdy = weekdays(date, abbreviate=T),
+         wkdy = fct_relevel(wkdy, "Sun", "Mon", "Tue", "Wed", "Thu","Fri","Sat"),
+         semester = ifelse(date %in% semester_dates, 1, 0),
+         # Fill only the actual exam day for this section, not the whole
+         # university exam period -- the course is over after Dec. 7.
+         exams = ifelse(date == final_day, 1, 0),
+         not_here = ifelse(date %in% not_here_dates, 1, 0),
+         duedate = ifelse(date %in% all_dues, 1, 0),
+         day = lubridate::mday(date),
+         week = wom(date)) -> Cal
+
+Cal %>%
+  mutate(category = NA_character_,
+         category = ifelse(semester == 1, "Semester", category),
+         category = ifelse(semester == 1 & not_here == 1, "No Class / Break", category),
+         # A deadline still stands on a break day, so due dates win the fill.
+         category = ifelse(duedate == 1, "Assignments Due", category),
+         category = ifelse(exams == 1, "Final Exam", category),
+         category = ifelse(is.na(category), "NA", category)) -> Cal
+
+Cal %>%
+  ggplot(.,aes(wkdy, week)) +
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank()) +
+  geom_tile(alpha=0.8, aes(fill=category), color="black", size=.45) +
+  facet_wrap(~mon, scales="free", ncol=3) +
+  # Open Sans is available to cairo_pdf but not to the Windows font database
+  # the HTML build's png device uses; "" means "device default" and keeps the
+  # web render from warning and falling back mid-draw.
+  geom_text(aes(label=day),
+            family = if (knitr::is_latex_output()) "Open Sans" else "") +
+  scale_y_reverse(breaks=NULL) +
+  scale_fill_manual(values=c("Assignments Due"="steelblue",
+                             "Semester"="lightsteelblue",
+                             "No Class / Break"="indianred4",
+                             "Final Exam"="forestgreen",
+                             "NA" = "white"),
+                    breaks=c("Assignments Due","Final Exam","No Class / Break")) +
+  labs(fill = "", x="", y="",
+       caption = "Notable dates: Classes begin Aug. 18; Labor Day Sept. 7; Fall Break Oct. 15-16; Election Day Nov. 3.\nThanksgiving Recess Nov. 22-29 -- NOTHING IS DUE Nov. 23-29. Last coursework due Fri. Dec. 4;\nFINAL EXAM the morning of Mon. Dec. 7.")  -> class_cal
+
+```
+
+\begin{center}
+\fbox{\begin{minipage}{0.94\textwidth}
+\vspace{3pt}
+\begin{center}\large\bfseries READ THIS BEFORE YOU READ ANYTHING ELSE\\[2pt]
+THIS COURSE DOES NOT ACCEPT LATE WORK\end{center}
+
+\textbf{I do not accept late work in this class for \emph{anything} assigned. No lates, period.} There are plenty of points available in this course, in small doses, spread across the entire semester. If you do not turn something in, please do not email me for permission or for forgiveness. There are no exceptions.\footnotemark{}
+
+\smallskip
+\textbf{This includes the final exam.} It is open for four hours (8 a.m. to 11:59am) on December 7 and carries a two-hour limit. If it is not \emph{completed} when the window closes, it submits automatically with the grade you have earned to that point. If you are halfway through, every unanswered question is scored as a zero.
+
+\smallskip
+\textbf{If you are a student who normally counts on retakes or on turning work in late,} I strongly recommend that you find another course and take this one later, from a professor with a more relaxed and forgiving attitude toward late assignments and tests. 
+\vspace{3pt}
+\end{minipage}}
+\end{center}
+\footnotetext{The sole exception is an absence formally certified by the Office of Student Advocacy under the University's attendance policy, which is described later in this syllabus. Nothing else qualifies.}
+
+<!-- The LaTeX block above is emitted only in the PDF; the HTML block below   -->
+<!-- only in the web version. Pandoc drops a raw block whose format does not  -->
+<!-- match the output, so the two never collide. KEEP THE TEXT IN SYNC.       -->
+
+```{=html}
+<aside class="warnbox" role="note" aria-labelledby="latework-title">
+<p class="warnbox-title" id="latework-title">READ THIS BEFORE YOU READ ANYTHING ELSE<br>THIS COURSE DOES NOT ACCEPT LATE WORK</p>
+
+<p><strong>I do not accept late work in this class for <em>anything</em> assigned. No lates, period.</strong> There are plenty of points available in this course, in small doses, spread across the entire semester. If you do not turn something in, please do not email me for permission or for forgiveness. There are no exceptions.<a href="#fn-latework" id="fnref-latework" role="doc-noteref" aria-describedby="fn-latework"><sup>1</sup></a></p>
+
+<p><strong>This includes the final exam.</strong> It is open for four hours (8 a.m. to 11:59am) on December 7 and carries a two-hour limit. If it is not <em>completed</em> when the window closes, it submits automatically with the grade you have earned to that point. If you are halfway through, every unanswered question is scored as a zero.</p>
+
+<p><strong>If you are a student who normally counts on retakes or on turning work in late,</strong> I strongly recommend that you find another course and take this one later, from a professor with a more relaxed and forgiving attitude toward late assignments and tests.</p>
+
+<p class="fn" id="fn-latework" role="doc-footnote"><sup>1</sup> The sole exception is an absence formally certified by the Office of Student Advocacy under the University's attendance policy, which is described later in this syllabus. Nothing else qualifies. <a href="#fnref-latework" role="doc-backlink" aria-label="Back to text">&#8617;</a></p>
+</aside>
+```
+
+```{r warnbox-docx, echo=FALSE, results='asis'}
+# Word gets neither the LaTeX nor the HTML block above, so the single most
+# important notice in the syllabus would silently disappear. Emit it as
+# markdown instead: a blockquote, which Word renders as an indented callout.
+# The ^[...] becomes a real Word footnote. KEEP THIS TEXT IN SYNC with the
+# two blocks above.
+if (is_docx) cat(paste(
+  "> **READ THIS BEFORE YOU READ ANYTHING ELSE**",
+  ">",
+  "> **THIS COURSE DOES NOT ACCEPT LATE WORK**",
+  ">",
+  "> **I do not accept late work in this class for *anything* assigned. No lates, period.** There are plenty of points available in this course, in small doses, spread across the entire semester. If you do not turn something in, please do not email me for permission or for forgiveness. There are no exceptions.^[The sole exception is an absence formally certified by the Office of Student Advocacy under the University's attendance policy, which is described later in this syllabus. Nothing else qualifies.]",
+  ">",
+  "> **This includes the final exam.** It is open for four hours (8 a.m. to 11:59am) on December 7 and carries a two-hour limit. If it is not *completed* when the window closes, it submits automatically with the grade you have earned to that point. If you are halfway through, every unanswered question is scored as a zero.",
+  ">",
+  "> **If you are a student who normally counts on retakes or on turning work in late,** I strongly recommend that you find another course and take this one later, from a professor with a more relaxed and forgiving attitude toward late assignments and tests.",
+  sep = "\n"))
+```
+
+\bigskip
+
+# Course Description
+
+\begin{flushright}
+\begin{minipage}{0.86\textwidth}
+\linespread{1}\selectfont\raggedleft\setlength{\parskip}{0pt}
+``One of the beautiful things about science is that it allows us to bumble along, getting it wrong time after time, and feel perfectly fine as long as we learn something each time.''
+
+\smallskip
+--- Martin A. Schwartz (2008), \href{https://ir.stonybrook.edu/xmlui/bitstream/handle/11401/8083/schwartzimportanceofstupidityinscience.pdf?sequence=1}{``The Importance of Stupidity in Scientific Research''}
+\end{minipage}
+\end{flushright}
+
+```{=html}
+<blockquote class="epigraph">
+<p>&ldquo;One of the beautiful things about science is that it allows us to bumble along, getting it wrong time after time, and feel perfectly fine as long as we learn something each time.&rdquo;</p>
+<cite class="attrib">&mdash; Martin A. Schwartz (2008), <a href="https://ir.stonybrook.edu/xmlui/bitstream/handle/11401/8083/schwartzimportanceofstupidityinscience.pdf?sequence=1">&ldquo;The Importance of Stupidity in Scientific Research&rdquo;</a></cite>
+</blockquote>
+```
+
+```{r epigraph-docx, echo=FALSE, results='asis'}
+if (is_docx) cat(paste(
+  "> *One of the beautiful things about science is that it allows us to bumble along, getting it wrong time after time, and feel perfectly fine as long as we learn something each time.*",
+  ">",
+  "> --- Martin A. Schwartz (2008), [\"The Importance of Stupidity in Scientific Research\"](https://ir.stonybrook.edu/xmlui/bitstream/handle/11401/8083/schwartzimportanceofstupidityinscience.pdf?sequence=1)",
+  sep = "\n"))
+```
+
+Criminal law is a constant source of fascination. In addition to its prominent place on television networks' schedules, criminal law governs the use of the most important form of governmental power: the power of government to incarcerate -- and even execute. All forms of law govern human behavior, but criminal law governs the most basic questions of how we treat one another and defines those forms of human action which society will not tolerate. Criminal law also presents a number of questions central to political institutions, including the Executive and Judicial Branches, and the Bureaucracy. This class is intended as much as an examination of these institutions and how they function within the context of criminal justice. This class will not teach you the skills needed to serve as a criminal defense attorney (least of all, for yourself), but it will engage you in a critical and engaged examination of our duties to others and the state's role in regulating individuals' actions.
+
+## Course Information
+
+-  **Course designator and number:** CRJU 314
+-  **Course title:** Criminal Law
+-  **Carolina Core designation:** None
+-  **Credit hours:** 3
+-  **Semester and year:** Fall 2026
+-  **Meeting days and times:** None. This course is fully online and asynchronous.
+-  **Meeting location:** Online, via Blackboard.
+
+## Instructor Information
+
+-  **Instructor:** Dr. Ian T. Adams
+-  **Department:** Department of Criminology and Criminal Justice
+-  **Degree held:** Ph.D.
+-  **Email:** [ian.adams@sc.edu](mailto:ian.adams@sc.edu) (best and fastest method of contact)
+-  **Web:** [ianadamsresearch.com](https://ianadamsresearch.com)
+-  **Google Scholar:** [scholar.google.com/citations?user=g9lY5RUAAAAJ](https://scholar.google.com/citations?user=g9lY5RUAAAAJ&hl=en)
+-  **Office:** Currell 114
+-  **Office hours:** By request. If you need help outside of the course materials, or wish to speak with me directly, email me and we will find a time. You will never be required to come to campus to meet with me, nor does a meeting have to fall during "bankers' hours."
+-  **Teaching assistant:** None assigned for this section. Direct all course questions to me.
+
+## Academic Bulletin Course Description
+
+Origin and development of criminal law in America. Basic elements of crimes and defenses.
+
+## Prerequisites
+
+There are no prerequisites for this course.
+
+## Course Learning Outcomes
+
+After successful completion of this course, you will be able to:
+
+1.  Explain the purposes, sources, and functions of American criminal law, and identify the constitutional limits on the power to define and punish crime.
+2.  Identify the elements of a criminal offense -- actus reus, mens rea, concurrence, and causation -- and apply them to a given set of facts.
+3.  Distinguish among the inchoate offenses of attempt, conspiracy, and solicitation, and explain the doctrines governing accomplice and vicarious liability.
+4.  Differentiate justification defenses from excuse defenses, and evaluate which, if any, applies to a given case.
+5.  Analyze the elements of the major offense categories, including homicide, offenses against the person, offenses against property and habitation, white-collar crime, offenses against public order and morality, and offenses against the state.
+6.  Evaluate competing arguments about the purposes of punishment and the design of sentencing systems.
+7.  Assess the reliability and credibility of legal and factual sources, including AI-generated content, and use them with proper attribution.
+8.  Communicate clearly and precisely about criminal law concepts, cases, and controversies.
+
+The learning outcomes are equivalent to those of a face-to-face (F2F) version of the course.
+
+# Instructional Methods
+
+This is a fully online, asynchronous course. There are no scheduled meetings, and there is nothing you must attend at a set time. It requires the same level of commitment and engagement as a face-to-face class, and you should expect to spend roughly the same total time and effort per credit hour that you would in a traditional section.
+
+Asynchronous does **not** mean self-paced. This is not an independent study. You have firm weekly deadlines, and work cannot be saved up for the final weeks of the semester. Each week's material builds on the last; if you fall behind, catching up is difficult and the structure of the course will work against you.
+
+The course runs on a **Monday-to-Sunday week**. New material opens Monday; that week's work is due the following **Sunday at 11:59 p.m. Eastern**. There are exactly two exceptions, both at the end of the semester: nothing is due during Thanksgiving recess, and the last module is due on **Friday, December 4**. Both are marked in the schedule. All course content is delivered through two places, and two places only:
+
+-  **Blackboard**, which is the front door for everything. Announcements, the syllabus, the final exam, and every link into the textbook platform live here.
+-  **SAGE Vantage**, the interactive textbook platform, which you reach *by clicking through Blackboard* (see the warning under Required Materials).
+
+Each weekly module in Vantage is built from the same set of components:
+
+-  **Self-Assessments**, which check what you already know before you read;
+-  **Reading Activities**, most of them "You Decide" case problems that ask you to resolve a real appellate case on its facts;
+-  **Knowledge Checks**, short section-by-section comprehension checks with unlimited attempts;
+-  **Critical Thinking Checks**, which ask you to apply the chapter's doctrine rather than recall it; and
+-  a **Chapter Quiz**, which is your one graded, single-attempt assessment for the week.
+
+To succeed in this course, you must be self-motivated and organized. Set specific days and times each week to do the work, and treat them as you would a class meeting.
+
+# Course Communication and Feedback
+
+Email is the best and fastest way to reach me: [ian.adams@sc.edu](mailto:ian.adams@sc.edu). I actively check and respond to email throughout the day, and I will always try to respond within 72 business hours (Monday through Friday, exclusive of holidays). *Normally* I am considerably faster than that, but like everyone else, life sometimes intervenes. If you have not heard from me within 72 hours, email me again -- messages do occasionally go missing. If your request is urgent, say so in the subject line.
+
+Announcements will be posted in Blackboard as needed, and are my official means of communicating with the entire class. **Set your Blackboard notification settings so that you actually receive them.** To confirm Blackboard has the right address for you, log in to [Blackboard](https://blackboard.sc.edu/), click your name in the left navigation panel, and review the email address listed. By default this is your university-issued address; if you are unsure which address is your preferred one, check [your account](https://myaccount.sc.edu/).
+
+Grades on Vantage work post automatically. I will return the final exam grade as promptly as the exam period allows.
+
+All communication between students and instructors is to be respectful in content and professional in tone. Nonprofessional communications will receive a request to rewrite according to these expectations. In practice this means:
+
+-  Using a salutation ("Hello Dr. Adams..."), a closing statement, and a sign-off with your full name;
+-  Stating the purpose of the email, and including enough background for me to understand and respond to it; and
+-  Using complete sentences and refraining from profanity.
+
+# Required Materials
+
+This course has one required item: an electronic textbook on the SAGE Vantage platform. There is no separate discussion platform this semester, and there is no required podcast.
+
+## Electronic Textbook
+
+Lippman, Matthew. *Contemporary Criminal Law: Concepts, Cases, and Controversies*. SAGE Vantage.
+
+-  **ISBN:** 9798348809096
+-  **Format:** SAGE Vantage (Inclusive Access) -- **Required**
+
+You **must** have access to the Vantage electronic textbook. A hardcopy, a rental, or a previous edition will **not** work, because your graded coursework lives inside the Vantage platform itself rather than in the book's pages. If you have difficulty obtaining access for any reason, contact me as soon as possible -- early, not after a deadline has passed.
+
+### Inclusive Access and the Opt-Out Deadline
+
+This course participates in **Inclusive Access**, which means the cost of the Vantage textbook is billed directly to your student account and access is switched on for you from day one. This is normally the cheapest way to get the material.
+
+**You may change your decision to opt in or opt out until 11:59 p.m. on `r fmt_date(ia_optout, '%B %d, %Y')`.** If you opt out, you lose access to Vantage -- and with it, access to the great majority of the graded work in this course. Opting out without arranging your own access to the same Vantage course is, functionally, a decision to fail the class. Please think carefully before doing it, and talk to me first.
+
+### Accessing the Textbook: Always Go Through Blackboard
+
+**Always** reach Vantage by clicking the assignment link inside Blackboard. The first time you click a Vantage link, you will be walked through registration and course enrollment.
+
+Do **not** bookmark the Vantage site and log in directly, and do not access it through any route other than Blackboard. Grades sync back to Blackboard through the link you clicked; work completed outside that path may not be credited to you. This is your responsibility, and I will not retroactively award credit for work submitted improperly.
+
+Your first task upon entering the Blackboard course is to click into the Chapter VM module and begin. If you are not successfully registered in Vantage, you cannot complete the requirements of this course.
+
+All course readings and materials comply with copyright and fair use policies.
+
+# Technology Requirements
+
+All materials, links, assignments, quizzes, and rubrics are located on the Blackboard site for the course. To participate in learning activities and complete assignments, you will need daily access to:
+
+-  A working computer with a current operating system and updates installed, plus speakers or headphones for video content (transcripts are provided);
+-  A reliable internet connection and a USC email account;
+-  A current browser compatible with Blackboard. Google Chrome is recommended. Supported browsers are Safari, Chrome, and Firefox on macOS, and Chrome, Edge, and Firefox on Windows;
+-  The Blackboard learning management system, and the SAGE Vantage platform reached through it;
+-  Microsoft Word as your word processing program;
+-  Adobe Acrobat Reader; and
+-  Reliable data storage, such as a USB drive or Office 365 OneDrive cloud storage.
+
+Microsoft Office 365 is free to all USC students and can be installed on up to five devices, with cloud storage on OneDrive. [Download Office 365](https://sc.edu/about/offices_and_divisions/division_of_information_technology/end_user_services/available_technology_resources/information_for_students/index.php) through your university account.
+
+All computers connected to the university network must have up-to-date antivirus software. Windows includes it; Macs do not. If your machine lacks antivirus software, request help from the [Carolina Tech Zone](https://sc.edu/about/offices_and_divisions/division_of_information_technology/end_user_services/available_technology_resources/carolina_tech_zone/).
+
+## Minimal Student Technical Skills
+
+This course requires a basic level of technical skill. All work must be completed and submitted online, so you must have consistent and reliable access to a computer and the internet. At minimum, you must be able to:
+
+-  Organize and save electronic files;
+-  Use USC email and manage attachments;
+-  Check email and Blackboard daily;
+-  Download and upload documents;
+-  Locate information with a web browser; and
+-  Use Blackboard effectively.
+
+## Technical Support
+
+For any computer, software, or Blackboard problem, contact the Division of Information Technology (DoIT) Service Desk at (803) 777-1800, submit a request through the [Self-Service Portal](https://scprod.service-now.com/sp), or visit the [Carolina Tech Zone](https://sc.edu/about/offices_and_divisions/division_of_information_technology/end_user_services/available_technology_resources/carolina_tech_zone/). The Service Desk is open Monday through Friday, 8:00 a.m. to 6:00 p.m. Eastern.
+
+For problems with the **SAGE Vantage platform specifically** -- registration, access codes, activities that will not load or will not record a score -- contact SAGE technical support directly through the help link inside Vantage. They can see things in your account that I cannot. Contact them promptly rather than waiting for a deadline to pass.
+
+If you have computer trouble, there are labs at Thomas Cooper Library and in certain campus buildings. If you are not in the Columbia area, most regional campuses and public libraries have computers for public use.
+
+# Assignments and Assessments
+
+All coursework and rubrics are available through Blackboard. All assignments are due, and the final exam is administered, on the dates in the course schedule below. All quizzes and the final exam are administered and secured within the Vantage and Blackboard platforms, with questions drawn randomly from large test banks so that no two students see an identical assessment.
+
+This course asks you to do real work every week. There is no midterm paper and no final essay this semester; instead, the weekly Vantage modules carry most of the load, and a comprehensive, timed final exam closes the course on `r fmt_date(final_day, '%B %d')`.
+
+## Weekly Vantage Work
+
+Every week you complete one chapter module in Vantage (two in the first and last weeks). Each module contains a mix of the following:
+
+-  **Self-Assessments** and **Reading Activities**, including the "You Decide" case problems. These are assigned for completion with unlimited attempts: you earn credit by doing the work and engaging with it, not by getting a particular answer on the first try.
+-  **Knowledge Checks.** Short, graded comprehension checks tied to each section of the chapter. You have unlimited attempts, so there is no good reason to score poorly on these. Use them.
+-  **Critical Thinking Checks.** These ask you to apply doctrine to new facts rather than recall a definition. They are assigned for completion.
+-  **Chapter Quiz.** Fifteen questions, graded, and **one attempt only**. This is the assessment that actually tests whether you learned the chapter, and its questions closely resemble what you will see on the final exam. Do the rest of the module *before* you open the quiz.
+
+**Everything in a given week is due the same night: Sunday at 11:59 p.m. Eastern** -- except the final module, Chapter 16, which is due Friday, December 4. Please note that the time required varies by chapter. If you have not read the chapter first, these activities will take considerably longer than they are designed to take.
+
+## Final Exam
+
+The final exam is comprehensive, covering all sixteen chapters. It consists of `r final_questions` questions worth `r final_per_q` points each, drawn from substantial test banks, and it is administered and secured **in Blackboard** -- not in Vantage. You have **one attempt**.
+
+**This is the single heaviest item in the course** -- see the grading weights below. Treat it accordingly.
+
+**Read these details carefully. This exam runs on a single morning, and it is timed.**
+
+-  **Date:** `r fmt_date(final_day, '%A, %B %d, %Y')` -- this date only.
+-  **Exam opens:** `r fmt_time(final_open_dt)` Eastern
+-  **Exam closes:** `r fmt_time(final_close_dt)` Eastern
+-  **Time limit:** `r final_minutes` minutes from the moment you begin.
+-  **Latest start to receive the full `r final_minutes` minutes:** `r fmt_time(latest_start)` Eastern.
+
+The window is open for just under four hours, but your personal timer is `r final_minutes` minutes. **If you begin after `r fmt_time(latest_start)`, the exam still closes at `r fmt_time(final_close_dt)` and you will get less than the full time.** Start at `r fmt_time(final_open_dt)` if you possibly can. Do not plan to start at 11:00.
+
+**Understand exactly what happens if you run out of time.** The exam does not pause, and it does not extend. When your timer expires or the window closes -- whichever comes first -- **it submits automatically with the grade you have earned to that point, and every question you did not answer is scored as a zero.** If you are halfway through when it closes, you receive credit for half an exam. There is no reopening it, no finishing it later, and no partial-credit appeal. Budget the `r final_minutes` minutes and keep moving.
+
+The Registrar does not assign an exam slot to asynchronous sections, so this date and window are set by me and stated here as the official time.
+
+**If you are outside the Eastern time zone, convert this now and put it in your calendar.** `r fmt_time(final_open_dt)` Eastern is 5:00 a.m. Pacific. It is your responsibility to sit the exam during the stated Eastern-time window regardless of where you are. If that window is genuinely impossible for you -- a documented conflict, a deployment, a time zone that makes it untenable -- email me **within the first two weeks of the semester** so we can arrange something. Do not wait until December.
+
+The final exam has electronic proctoring enabled to ensure ethical test taking. I strongly encourage you to use University of South Carolina technology -- on-campus computers and WiFi -- when completing the final exam. I cannot and will not be responsible for claimed technology failures on personal equipment. Given the timer, test your setup in advance.
+
+**There will absolutely be no assignments, quizzes, or exams accepted after `r fmt_time(final_close_dt)` on `r fmt_date(final_day, '%B %d, %Y')`.** None. Add it to your calendar now. Failure to submit any assignment, quiz, or exam by that date and time will automatically be counted as a zero toward your final grade. I will accept no appeals on this, so please plan ahead.
+
+# Grading Policy
+
+Your grade in this course is calculated from four categories. Each category's weight reflects its share of the total work in the course, and every graded item within a category counts toward that category proportionally.
+
+```{r weights, echo=FALSE}
+show_tbl(weights_tbl, "Assignment weights")
+```
+
+**I do not publish point values or running point totals in this syllabus, and I do not maintain a separate grade sheet.** Your scores are recorded in two places, both of which are live and current at all times:
+
+-  **SAGE Vantage** shows every activity, its status, and your score on it, module by module.
+-  **Blackboard** shows the grades that have synced from Vantage, plus your final exam grade.
+
+Check both regularly. If you want to know where you stand, that is where you look -- you have better and more current information there than I could put in a static document. If the two disagree, tell me promptly so I can sort it out.
+
+## Grading Scale
+
+This course uses a traditional letter-grade scale, shown below. **Grades do not round up** -- you must clear the stated percentage for each grade level. An 89.9% is a B+, not an A-. I would be delighted to give every student an A. To earn one, be consistent, motivated, and engaged. The most reliable path: do every module on time, read every chapter before opening the quiz, and never let a week slide.
+
+```{r gradescale, echo=FALSE}
+show_tbl(grades, "Grading scale")
+```
+
+## Contested Grades
+
+If you would like an assignment regraded, email me and state clearly what the issue is and the reasons you believe justify an adjustment. Be aware that if I agree to regrade, the entire assignment is evaluated again -- your grade can go down as well as up, and the new grade is final. If you simply have a concern about a single test item, there is no need to request a full regrade; just email me about that item.
+
+## Grade Grubbing
+
+["Grade grubbing" is the act of trying to get a higher grade on an assignment](https://www.science.org/content/article/confessions-former-grade-grubber) or test by pestering the instructor or using dishonest methods. It often takes the form of repeatedly asking for extra credit or trying to talk an instructor into changing a grade. Students do it because they are afraid of a low grade, or because they have become overly focused on grades as such.
+
+[You should avoid this at all costs.](https://marktomforde.com/academic/undergraduates/GradeGrubbing.html) It will not help you in this course. It is stressful, time-consuming, and it usually ends in frustration for everyone. Focus instead on understanding the material and doing your best on each module. That will improve your grades, and it will also make the semester worth something to you.
+
+# Attendance and Participation Policy
+
+Because this course is asynchronous, there is no class meeting to attend and **no separate participation grade**. Your engagement is measured entirely by your completion of the weekly Vantage modules and the final exam, which are already reflected in the grading weights above.
+
+That said, online participation *is* required. You must log in to Blackboard several times per week to complete the module and to check for announcements, even in a week when you have already finished the work. Staying current on course information is your responsibility.
+
+Attendance is recorded through your completion of coursework. Missed work receives a score of zero unless you have an [excused absence](https://academicbulletins.sc.edu/undergraduate/policies-regulations/undergraduate-academic-regulations/). With an excused absence, you will be permitted to make up the work or complete an equivalent assignment as agreed with me.
+
+Religious holy days and observances, along with recommended accommodations, are listed in the [Interfaith Calendar](https://sc.edu/about/offices_and_divisions/student_affairs/student-services/student_life/spiritual_religious_life/interfaith_calendar/). If any course deadline conflicts with a religious observance, tell me and we will make arrangements.
+
+## Anticipated Excused Absences
+
+For absences you can anticipate at the start of the term and that qualify as excused under the [USC undergraduate attendance policy](https://academicbulletins.sc.edu/undergraduate/policies-regulations/undergraduate-academic-regulations/) -- authorized University activities, religious observances, and the like -- you should:
+
+1.  Submit a written request (email is fine) to me **by the end of the second week of the course**, specifying the dates involved;
+2.  Explain the reason for the absence and include any supporting documentation; and
+3.  Request make-up work, including a proposed revised timeframe and due date.
+
+Anticipated absences related to medical concerns must be submitted to the [Office of Student Advocacy](https://sc.edu/about/offices_and_divisions/student_affairs/our_initiatives/academic_success/ombuds_services/index.php) rather than to me.
+
+## Unanticipated Excused Absences
+
+For absences you could not anticipate -- illness or injury, legal proceedings, a death in the immediate family -- submit an excused absence request through the [Office of Student Advocacy](https://sc.edu/about/offices_and_divisions/student_affairs/our_initiatives/academic_success/ombuds_services/index.php) at the first opportunity, using the [Student Advocacy Report Form](https://cm.maxient.com/reportingform.php?UnivofSouthCarolina&layout_id=77). If the absence qualifies, the Office of Student Advocacy will certify it and notify your instructors. You must then contact me to request make-up work, which may need to be completed within one week of your return.
+
+## Consistency, Fairness, and Appeals
+
+Attendance and participation are measured and applied consistently for all students, and I keep verifiable records, available to you on request. Any exceptions are handled case by case and in accordance with university policy. If you believe this policy has been applied inconsistently or unfairly, you may appeal in writing to me within seven days of the evaluation in question.
+
+# Late Work and Make-Up Policy
+
+**There is no late work in this course.** This is stated in the box on the first page, and it is repeated here because it is the single policy most likely to affect your grade. It applies to every graded item without exception: every Vantage activity, every Knowledge Check, every Chapter Quiz, and the final exam.
+
+All deadlines are 11:59 p.m. Eastern on the date listed, except Chapter 16, which is due Friday, December 4. Note that the clock on your computer may differ from the clock in Blackboard and Vantage; if it differs by even a second, you can be locked out. Plan accordingly, and submit well before the deadline rather than at it.
+
+-  **Vantage module work closes at the deadline.** There are no late submissions and no reopened activities. If you are partway through an activity when it closes, you receive credit for the progress you made and nothing more -- which is an excellent reason to start early and never a reason to start late.
+-  **The final exam has no late option and no second sitting.** It runs on one morning, `r fmt_date(final_day, '%B %d')`, and closes at `r fmt_time(final_close_dt)`. It does not pause and it does not extend. **If you have not finished when the window closes, it submits itself with whatever you have answered, and every unanswered question is scored zero.** An unexcused absence from the final is a zero on the final.
+-  **Do not email to request an extension, a reopening, or an exception.** I will not grant one, and asking costs us both time. This is not personal and it is not a judgment about your reason; it is simply the rule, applied identically to everyone.
+
+**The one exception is a University-certified excused absence.** This is not something I grant -- it runs through the [Office of Student Advocacy](https://sc.edu/about/offices_and_divisions/student_affairs/our_initiatives/academic_success/ombuds_services/index.php) under the [undergraduate attendance policy](https://academicbulletins.sc.edu/undergraduate/policies-regulations/undergraduate-academic-regulations/), and the process is described under *Attendance and Participation* above. If your absence is certified through that office, make-up work is granted without penalty, as University policy requires. If it is not, it is late, and late is zero.
+
+If you can see trouble coming, start that process early rather than emailing me after a deadline has passed. Once a due date is gone, there is nothing either of us can do about it.
+
+Students who miss the final exam with a qualifying excused absence will be given an opportunity to make it up. Options include taking the exam at an alternative time within the same examination period if I agree; receiving a grade of 'I' (Incomplete) and completing the course under the conditions specified in the "Assignment of Incomplete Grade" form; or taking a deferred examination at the next regular examination period, at a time agreed upon by both of us and within one calendar year. Deferred examinations are granted only where the absence is certified as unavoidable because of documented illness or other cause making attendance impossible.
+
+# Academic Integrity
+
+When students, faculty, and staff wrote the Carolinian Creed, their choice for the first tenet was, "I will practice personal and academic integrity." As partners in your learning, it matters to both of us that what you submit is a genuine reflection of your own work and understanding.
+
+You are expected to practice the highest standards of academic integrity. Any deviation will result in a referral to the Office of Student Conduct and Academic Integrity (OSCAI) for an alleged Honor Code violation. If a violation is found, there is a minimum academic penalty of failing the assignment, in addition to whatever outcome OSCAI reaches. This includes improper citation of sources, unauthorized use of artificial intelligence, and any other form of academic misrepresentation.
+
+Suspected violations of **Cheating** -- "unauthorized assistance in connection with any academic work" -- and **Falsification** -- "misrepresenting or misleading others with respect to academic work or misrepresenting facts for an academic advantage" -- will be referred to OSCAI.
+
+**Plagiarism.** Using the words or ideas of another as if they were your own is a serious form of academic dishonesty. If another person's complete sentence, syntax, key words, or specific or unique ideas and information are used, you must give that person credit through proper citation.
+
+**A note specific to this course:** the Chapter Quizzes and the final exam are single-attempt, closed assessments. Sharing quiz or exam questions with other students, in any forum, is unauthorized assistance. So is receiving them. The unlimited-attempt Knowledge Checks exist precisely so that you have a legitimate, unlimited way to practice -- use those instead.
+
+Useful links:
+
+-  [Carolinian Creed](https://sc.edu/about/offices_and_divisions/student_affairs/our_initiatives/involvement_and_leadership/carolinian_creed/index.php)
+-  [Academic Responsibility (STAF 6.25)](http://www.sc.edu/policies/staf625.pdf)
+-  [Office of Student Conduct and Academic Integrity](https://www.sa.sc.edu/academicintegrity/)
+-  [Information Security Policy and Standards](https://sc.edu/about/offices_and_divisions/division_of_information_technology/security/policy/index.php)
+
+# Generative Artificial Intelligence (GenAI) Policy
+
+Generative AI tools are permitted in this course **in specific contexts and with acknowledgment**. Understanding when these tools help and when they mislead is itself a skill this course expects you to build -- which is why your very first module, Chapter VM, is devoted to information literacy, academic integrity, and responsible AI use. Take it seriously; it sets the terms for the rest of the semester.
+
+**You may** use generative AI tools to brainstorm, to check your understanding of a concept, to generate practice questions for yourself, to explain a case you found difficult, or to help you organize your thinking before you write.
+
+**You may not** use generative AI tools to answer Chapter Quizzes or the final exam. These are closed, single-attempt assessments, and using AI on them is unauthorized assistance under the university's academic integrity policy. Nor may you submit AI-generated text as your own work anywhere in this course.
+
+**When you use these tools on any submitted work, disclose it.** State which tool you used, when, and how -- whether it generated ideas, phrasing, structure, or text. If AI-generated language appears in what you submit, it must be attributed. Style guides now address this directly; see the guidance from [MLA](https://style.mla.org/citing-generative-ai/), [APA](https://apastyle.apa.org/blog/how-to-cite-chatgpt), and [Chicago](https://www.chicagomanualofstyle.org/qanda/data/faq/topics/Documentation/faq0422.html).
+
+Two cautions worth stating plainly, because this is a law course. First, **you are fully responsible for everything you submit**, including anything an AI tool produced. "The model said so" is not a defense, here or in professional life. Second, **general-purpose AI tools are demonstrably unreliable on legal questions**. They invent cases, misstate holdings, garble the elements of offenses, and blur the law of one jurisdiction into another. Real lawyers have been sanctioned for filing AI-hallucinated citations. Verify everything against the textbook and the actual case.
+
+If you are unsure whether a particular use is acceptable, ask me before you do it. I would much rather answer that question in advance than adjudicate it afterward.
+
+# Expectations
+
+## Expectations for Course Behavior
+
+Professionalism is expected at all times, including in your online interactions. Because the university classroom -- physical or virtual -- is a space designed for the free exchange of ideas, we show respect for one another in all interactions, exhibiting patience and courtesy in our exchanges. Appropriate language and restraint from verbal attacks upon those whose perspectives differ from your own is the minimum requirement.
+
+Criminal law inherently centers on topics about which people hold strong opinions grounded in personal values, beliefs, and interests. This course will ask you not only to acknowledge and respect perspectives that differ from your own, but at times to challenge your own views and step into another's perspective to test the strengths and limits of your argument. **Respectful behavior is the expectation, norm, and requirement in this class.** Arguments and ideas may -- and should -- be challenged. Personal attacks, disrespectful behavior, and hateful attitudes toward people or groups of people will not be.
+
+## Netiquette
+
+Written communication in an online course carries all the weight that tone of voice and body language would carry in person, so it deserves care:
+
+-  **Respect one another.** Avoid personal attacks, even in sharp disagreement.
+-  **Avoid ALL CAPS.** It reads as shouting.
+-  **Use proper salutations.** Begin with a polite greeting. "Hey" is not one.
+-  **Use a clear subject line**, and include the course number (CRJU 314). Sign off with your full name.
+-  **Use correct grammar and spelling.** Text-message shorthand is not appropriate.
+-  **Communicate tastefully.** No profanity or offensive language.
+-  **Reread before you send.** Always.
+
+## Expectations of the Instructor
+
+I commit to being your mentor and the facilitator of this course, and to the following:
+
+-  I will design the course to include materials and assignments that challenge you and give you real opportunity to learn and practice the content.
+-  Though this course runs online, it is not run "automatically" by technology. I interact with the class through announcements, email, and feedback.
+-  I will respond to email in a timely fashion -- within 24 to 72 hours, not including weekends and holidays.
+-  I will be available for individual consultation by email or video call. You will never be required to come to campus to meet with me.
+-  I will provide feedback on assignments in a timely manner.
+-  I will be fair and objective in grading, and will ensure and enforce a respectful atmosphere.
+-  I will maintain a course that is open to questions, discussion, and ethical disagreement.
+-  I will follow all [official University of South Carolina policies](https://academicbulletins.sc.edu/undergraduate/policies-regulations/undergraduate-academic-regulations/#text) regarding conduct, incompletes, and accommodations.
+
+## Expectations of Students
+
+This course has a structure and a timeline, including firm due dates. The following is expected of every student:
+
+-  Log in to the course several times each week.
+-  Complete each week's Vantage module by its Sunday deadline.
+-  Be self-motivated, organized, and willing to stay on top of your schedule. Take control of your own learning.
+-  Regularly check course announcements. The *Announcements* area is my official means of communicating with the entire class.
+-  Update your Blackboard settings so you receive timely notifications.
+-  Take the initiative to contact me if you have questions, are struggling with the material, or need help. If you do not hear back within 72 hours, contact me again.
+-  Engage with the course and with me in a respectful and professional manner at all times.
+
+## Supportive Learning Environment
+
+The university is committed to a campus environment that is supportive, safe, and respectful for all persons, and one that fully embraces the [Carolinian Creed](https://sc.edu/about/offices_and_divisions/student_affairs/our_initiatives/involvement_and_leadership/carolinian_creed/index.php). All course activities will be conducted in an atmosphere of friendly participation and interaction among colleagues, recognizing and appreciating the unique experiences, background, and point of view each student brings.
+
+It is my intent that students from all backgrounds and perspectives be well served by this course, that your learning needs be addressed, and that the diversity you bring to this class be viewed as a resource and a strength. Your suggestions for improving the course are encouraged and appreciated.
+
+I also believe we are all lifelong learners. Good discussions are energetic and passionate, yet always respectful and constructive. Vibrant, rigorous inquiry emerges from conversations that:
+
+-  challenge, defend, and apply a range of ideas, theories, perspectives, and skills;
+-  extend knowledge into new areas and applications; and
+-  create a synergy that motivates us to seek resolution and deeper understanding.
+
+**A note on course content.** No area of study touches on more sensitive material than criminal law. You will read about, and think carefully about, very difficult subjects, and some case descriptions are graphic. This is unavoidable: the cases are the course. If you are aware of cognitive or emotional triggers that could disrupt your intellectual or mental health, let me know so that I can be aware of them in relation to course content. I will work with students who require schedule adjustments due to religious or other significant obligations; I will not consider requests based on course content itself.
+
+## Incomplete Grades
+
+You may be assigned an 'I' (Incomplete) grade if you are unable to complete a significant portion of the assigned coursework because of an unanticipated illness, accident, work-related responsibility, family hardship, or verified learning disability. An Incomplete gives you additional time to complete course assignments only where there is indication that the specified circumstances prevented you from completing them on time.
+
+## Copyright and Fair Use
+
+I will cite or reference any materials used in this course that I did not create. You are expected not to distribute any of these materials, resources, quizzes, tests, or assignments, whether graded or ungraded.
+
+# Class Schedule
+
+Important: the schedule is subject to change, contingent on mitigating circumstances and the progress we make as a class. Check the Blackboard course for updates -- **Blackboard and Vantage are always authoritative if they disagree with this document.**
+
+Here is an overview calendar for the course. The semester is in light blue, and weekly deadlines are in darker blue. Your final exam day, `r fmt_date(final_day)`, is in green. Red days are university breaks with no classes. Note that a deadline falling inside a break week is still a deadline.
+
+```{r calendar, echo=F, eval=T, fig.cap="Calendar for CRJU 314: Criminal Law, Fall 2026", fig.alt="Month grid of the Fall 2026 semester, August through December. Weekly assignment deadlines fall on Sundays from August 23 through November 22, plus a final deadline on Friday December 4. University breaks with no classes are Labor Day September 7, Fall Break October 15 and 16, Election Day November 3, and Thanksgiving Recess November 22 through 29. Nothing is due during Thanksgiving Recess. The final exam is the morning of Monday December 7. All of this information is also stated in the week-by-week schedule that follows.", warning=F, fig.width=11, fig.height=7}
+
+class_cal
+
+```
+
+The course is arranged into weekly modules corresponding to the textbook chapters. **Each week runs Monday through Sunday, and all of that week's Vantage work is due Sunday at 11:59 p.m. Eastern.** The dates in each heading below give the full span of the week; the "Due" line gives the deadline.
+
+Two things about the end of the semester are worth knowing now rather than in November. **Nothing is due during Thanksgiving recess (November 23--29)** -- that week is genuinely free. To make that work, Week 14 carries two chapters, and the semester's last module is due **Friday, December 4** instead of a Sunday.
+
+##  `r wk[1]`
+
+**Topics:** Course orientation and setup. Information literacy, academic integrity, and responsible AI use. The nature, purpose, and function of criminal law.
+
+**Readings:** Syllabus; Student Code of Conduct; Chapter VM; Chapter 1.
+
+**Due:** `r due_str[1]`, 11:59 p.m.
+
+**Note:** This is a double week -- register in Vantage *immediately* and complete Chapter VM first. Classes begin Tuesday, August 18. Monday, August 24 is the last day to drop without a grade of "W."
+
+##  `r wk[2]`
+
+**Topics:** Constitutional Limitations
+
+**Readings:** Chapter 2
+
+**Due:** `r due_str[2]`, 11:59 p.m.
+
+##  `r wk[3]`
+
+**Topics:** Punishment and Sentencing
+
+**Readings:** Chapter 3
+
+**Due:** `r due_str[3]`, 11:59 p.m.
+
+**Note:** Tuesday, September 1 is the last day to change your Inclusive Access opt-in/opt-out decision.
+
+##  `r wk[4]`
+
+**Topics:** Actus Reus
+
+**Readings:** Chapter 4
+
+**Due:** `r due_str[4]`, 11:59 p.m.
+
+**Note:** Labor Day is Monday, September 7. The deadline is unchanged.
+
+##  `r wk[5]`
+
+**Topics:** Mens Rea, Concurrence, and Causation
+
+**Readings:** Chapter 5
+
+**Due:** `r due_str[5]`, 11:59 p.m.
+
+##  `r wk[6]`
+
+**Topics:** Parties to Crime and Vicarious Liability
+
+**Readings:** Chapter 6
+
+**Due:** `r due_str[6]`, 11:59 p.m.
+
+##  `r wk[7]`
+
+**Topics:** Attempt, Conspiracy, and Solicitation
+
+**Readings:** Chapter 7
+
+**Due:** `r due_str[7]`, 11:59 p.m.
+
+##  `r wk[8]`
+
+**Topics:** Justifications
+
+**Readings:** Chapter 8
+
+**Due:** `r due_str[8]`, 11:59 p.m.
+
+##  `r wk[9]`
+
+**Topics:** Excuses
+
+**Readings:** Chapter 9
+
+**Due:** `r due_str[9]`, 11:59 p.m.
+
+**Note:** Monday, October 12 is the midpoint of the semester. Fall Break is Thursday and Friday, October 15--16. The deadline is unchanged.
+
+##  `r wk[10]`
+
+**Topics:** Homicide
+
+**Readings:** Chapter 10
+
+**Due:** `r due_str[10]`, 11:59 p.m.
+
+##  `r wk[11]`
+
+**Topics:** Criminal Sexual Conduct, Assault and Battery, Kidnapping, and False Imprisonment
+
+**Readings:** Chapter 11
+
+**Due:** `r due_str[11]`, 11:59 p.m.
+
+##  `r wk[12]`
+
+**Topics:** Burglary, Trespass, Arson, and Mischief
+
+**Readings:** Chapter 12
+
+**Due:** `r due_str[12]`, 11:59 p.m.
+
+**Note:** General Election Day is Tuesday, November 3. **Wednesday, November 4 is the last day to drop this course or withdraw without a grade of "WF."** If you are considering it, talk to me before that date, not after.
+
+##  `r wk[13]`
+
+**Topics:** Crimes Against Property
+
+**Readings:** Chapter 13
+
+**Due:** `r due_str[13]`, 11:59 p.m.
+
+##  `r wk[14]`
+
+**Topics:** White-Collar Crime. Crimes Against Public Order and Morality.
+
+**Readings:** Chapters 14 and 15
+
+**Due:** `r due_str[14]`, 11:59 p.m.
+
+**Note:** This is a double week, deliberately. Chapters 14 and 15 are the two shortest in the book, and pairing them here is what keeps Thanksgiving clear -- **nothing at all is due between November 23 and November 29.** The tradeoff is that this week is fuller than usual, and the deadline lands on the Sunday that recess begins. Start on Monday, finish before you travel.
+
+##  Week 15: November 23 -- November 29
+
+**THANKSGIVING RECESS. Nothing is due this week.**
+
+No new chapters, no deadlines, nothing to submit. Enjoy the break.
+
+##  Week 16: November 30 -- December 4
+
+**Topics:** Crimes Against the State. Review and final exam preparation.
+
+**Readings:** Chapter 16
+
+**Due:** **`r fmt_date(ch16_due, '%A, %B %d')`, 11:59 p.m.** -- note that this is a **Friday**, not the usual Sunday. It is the last day of classes, and it is the last coursework deadline of the semester.
+
+**Note:** Chapter 16 is a short module on purpose. The Friday deadline leaves the weekend and Reading Day (December 5--6) completely free so you can review for the final, which is the following Monday morning. Also please complete the Student Course Experience Survey, open November 28 through December 4.
+
+##  Final Exam: `r fmt_date(final_day, '%A, %B %d, %Y')`
+
+**FINAL EXAM, in Blackboard.** Opens `r fmt_time(final_open_dt)` Eastern. Closes `r fmt_time(final_close_dt)` Eastern. `r final_questions` questions, one attempt, `r final_minutes`-minute timer once you begin. **Begin no later than `r fmt_time(latest_start)`** to receive your full time.
+
+The university examination period runs December 7--14, but **this course's exam is on December 7 only.** There is no second sitting and no alternate date except by documented excused absence.
+
+There will *absolutely* be no assignments, quizzes, or exams accepted after `r fmt_time(final_close_dt)` on `r fmt_date(final_day, '%B %d, %Y')`. None. Add it to your calendar now. Failure to submit any assignment, quiz, or exam by that date and time will automatically be counted as a zero toward your final grade. I will accept no appeals on this, so please plan ahead.
+
+# University Policies and Student Resources
+
+The following resources and statements are drawn from University of South Carolina policies, values, and mission. If you have questions or concerns not answered below, contact me directly so we can work together to address them.
+
+## Disability Services
+
+The University of South Carolina is committed to providing equitable access to learning opportunities for students with disabilities. Students seeking accommodations should contact the [Student Disability Resource Center (SDRC)](http://www.sa.sc.edu/sds/) at 803-777-6142, email [sadrc@mailbox.sc.edu](mailto:sadrc@mailbox.sc.edu), or visit Close-Hipp Suite 102 to begin the registration process.
+
+Once accommodations have been approved through the SDRC, provide your accommodation notification letter to me as early as possible -- ideally within the first week of the semester, and always at least one week before the accommodation is needed.
+
+Students who have questions or experience barriers related to disability access are encouraged to contact the SDRC for assistance.
+
+## Mental Health and Well-Being
+
+If stress is affecting your ability to complete schoolwork, maintain relationships, eat, sleep, or enjoy life, please reach out to any of USC's mental health resources. Most of these services are offered at no cost, as they are covered by the Student Health Services tuition fee. For a complete list, visit [Student Health and Well-Being](https://sc.edu/about/offices_and_divisions/student-health-well-being/index.php).
+
+-  **Counseling & Psychiatry Services (CAPS)** offers brief individual and group counseling as well as psychiatric services. Schedule at (803) 777-5223 or through [MyHealthSpace](https://myhealthspace.ushs.sc.edu/).
+-  **Wellness Coaching** can help with sleep, resiliency, balanced eating, and related areas. Schedule at (803) 777-6518 or through [MyHealthSpace](https://myhealthspace.ushs.sc.edu/).
+-  **24-Hour Mental Health Support Line:** (844) 287-6963.
+-  **[Therapy Assistance Online (TAO)](https://us.taoconnect.org/login)** offers virtual self-help modules.
+-  **[Anonymous mental health screening](https://www.uscscreening.org/welcome.cfm?access=website)** is available online.
+
+## Interpersonal Violence
+
+Interpersonal violence -- including sexual harassment, relationship violence, sexual assault, and stalking -- is prohibited at USC. Faculty, staff, and administrators encourage anyone experiencing interpersonal violence to speak with someone so they can get the necessary support and so USC can respond appropriately. If you or someone you know has been or is currently impacted by interpersonal violence, you can find resources at [Sexual Assault and Violence Intervention & Prevention (SAVIP)](https://sc.edu/safety/interpersonal-violence/index.php).
+
+As faculty, I must report all incidents of interpersonal violence and sexual misconduct, and thus cannot guarantee confidentiality. Please know that you can seek [confidential resources](https://sc.edu/safety/interpersonal-violence/index.php). If you want to make a formal report, you can [report interpersonal violence and sexual misconduct](https://cm.maxient.com/reportingform.php?UnivofSouthCarolina&layout_id=25), or contact the institution's Title IX Coordinator or one of the Deputy Title IX Coordinators listed on the SAVIP website. You can also file a police report by contacting USC Police at 803-777-4215.
+
+## Academic Success
+
+Academic success is built on proactive habits and skills. Tips for success in an online course include recognizing that meaningful learning happens in an online environment; avoiding procrastination; communicating effectively in writing; becoming self-motivated, disciplined, and committed to learning; developing strong critical thinking and decision-making skills; managing your time to stay on track; and developing good help-seeking behaviors when you hit a wall.
+
+This campus offers a wide range of academic support services. Most students take advantage of them at some point.
+
+### Student Success Center
+
+In partnership with USC faculty, the [Student Success Center (SSC)](https://sc.edu/about/offices_and_divisions/student_success_center/index.php) offers several programs designed to help you better understand your course material. SSC programs are led by professional staff, graduate students, and trained undergraduate peer leaders who have previously excelled in their courses. Resources available to you may include:
+
+-  **[Peer Tutoring](https://sc.edu/about/offices_and_divisions/student_success_center/undergraduate-support/index.php):** one-on-one appointments, with drop-in and online tutoring also available for some courses.
+-  **Supplemental Instruction (SI):** SI Leaders are assigned to specific course sections and hold weekly study sessions focused on the most challenging content.
+-  **Peer Writing and Communications Tutoring:** bring writing assignments from any of your classes to a Peer Writing Tutor.
+-  **Success Coaching:** personalized sessions to help you develop study skills, set academic goals, and connect with campus resources.
+
+SSC services are available to all USC undergraduates at no additional cost. Call 803-777-1000, visit the [Student Success Center](http://www.sc.edu/success), or stop by the Thomas Cooper Library (Mezzanine Level).
+
+This course may participate in the university's Progress Report/Alert Initiative. At key points in the semester, I may notify the SSC about students who may not be meeting established criteria for attendance, grades, or assignment performance. If the SSC contacts you, schedule a Success Coaching appointment promptly. **Referrals are not punitive** -- they indicate that your instructor is concerned about your progress -- and any information shared is confidential under FERPA.
+
+### Writing Center
+
+The [University Writing Center](https://sc.edu/study/colleges_schools/artsandsciences/english_language_and_literature/beyond_classroom/writing_center/index.php/university-writing-center) offers help in developing, organizing, clarifying, and refining your writing at any stage of the process. Both in-person and remote appointments are available, and services are free to all USC students. The Writing Center is located in Byrnes Building, Room 703. [Schedule an appointment online](https://sc.mywconline.net/).
+
+### University Libraries
+
+[University Libraries](https://sc.edu/about/offices_and_divisions/university_libraries/index.php) provides access to books, articles, subject-specific resources, citation help, and more. If you are not sure where to start, assistance is available at [Ask a Librarian](http://sc.edu/libraries/ask).
+
+Remember that if you use anything that is not your own writing or media -- quotes from books, articles, interviews, websites, films, everything -- you must cite the source in an appropriate and approved format.
+
+### Veterans and Military Services
+
+If you are a student veteran or military service member, USC has a [Veterans and Military Services Center](https://sc.edu/about/offices_and_divisions/veterans_and_military_services/index.php) located at 901 Sumter Street, Suite 105, open Monday through Friday, 0830--1700. Please also let me know if you need any additional support in this class.
